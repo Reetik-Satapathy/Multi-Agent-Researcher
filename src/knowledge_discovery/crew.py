@@ -63,7 +63,7 @@ class KnowledgeDiscoveryCrew:
         return Task(
             description=cfg.get("description"),
             expected_output=cfg.get("expected_output"),
-            agent=cfg.get("agent"),
+            agent=self.paper_search_agent(),
         )
 
     @task
@@ -72,7 +72,7 @@ class KnowledgeDiscoveryCrew:
         return Task(
             description=cfg.get("description"),
             expected_output=cfg.get("expected_output"),
-            agent=cfg.get("agent"),
+            agent=self.research_analysis_agent(),
             context=[self.paper_search_task()],
         )
 
@@ -82,7 +82,7 @@ class KnowledgeDiscoveryCrew:
         return Task(
         description=cfg.get("description"),
         expected_output=cfg.get("expected_output"),
-        agent=cfg.get("agent"),
+        agent=self.report_agent(),
         context=[
             self.paper_search_task(),
             self.research_analysis_task(),
