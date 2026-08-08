@@ -25,14 +25,16 @@ with open(CONFIG_DIR / "tasks.yaml", "r", encoding="utf-8") as f:
 class KnowledgeDiscoveryCrew:
     """Multi-agent crew for automated research discovery and reporting."""
 
-    # Provide parsed YAML mappings (not raw file paths) to agents/tasks
+    # Note: AGENTS_CONFIG and TASKS_CONFIG are loaded at module import.
+    # Avoid relying on instance attributes which CrewBase may override — reference
+    # the module-level mappings directly when creating Agents/Tasks.
     agents_config = AGENTS_CONFIG
     tasks_config = TASKS_CONFIG
 
     @agent
     def paper_search_agent(self) -> Agent:
         return Agent(
-            config=self.agents_config["paper_search_agent"],
+            config=AGENTS_CONFIG["paper_search_agent"],
             tools=[PaperSearchTool()],
             llm=get_llm(),
             verbose=True,
@@ -41,7 +43,7 @@ class KnowledgeDiscoveryCrew:
     @agent
     def research_analysis_agent(self) -> Agent:
         return Agent(
-            config=self.agents_config["research_analysis_agent"],
+            config=AGENTS_CONFIG["research_analysis_agent"],
             tools=[NoveltyAnalysisTool()],
             llm=get_llm(),
             verbose=True,
@@ -50,26 +52,26 @@ class KnowledgeDiscoveryCrew:
     @agent
     def report_agent(self) -> Agent:
         return Agent(
-            config=self.agents_config["report_agent"],
+            config=AGENTS_CONFIG["report_agent"],
             llm=get_llm(),
             verbose=True,
         )
 
     @task
     def paper_search_task(self) -> Task:
-        return Task(config=self.tasks_config["paper_search_task"])
+        return Task(config=TASKS_CONFIG["paper_search_task"])
 
     @task
     def research_analysis_task(self) -> Task:
         return Task(
-            config=self.tasks_config["research_analysis_task"],
+            config=TASKS_CONFIG["research_analysis_task"],
             context=[self.paper_search_task()],
         )
 
     @task
     def report_generation_task(self) -> Task:
         return Task(
-            config=self.tasks_config["report_generation_task"],
+            config=TASKS_CONFIG["report_generation_task"],
             context=[
                 self.paper_search_task(),
                 self.research_analysis_task(),
