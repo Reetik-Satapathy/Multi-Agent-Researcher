@@ -59,24 +59,35 @@ class KnowledgeDiscoveryCrew:
 
     @task
     def paper_search_task(self) -> Task:
-        return Task(config=TASKS_CONFIG["paper_search_task"])
+        cfg = TASKS_CONFIG["paper_search_task"]
+        return Task(
+            description=cfg.get("description"),
+            expected_output=cfg.get("expected_output"),
+            agent=cfg.get("agent"),
+        )
 
     @task
     def research_analysis_task(self) -> Task:
+        cfg = TASKS_CONFIG["research_analysis_task"]
         return Task(
-            config=TASKS_CONFIG["research_analysis_task"],
+            description=cfg.get("description"),
+            expected_output=cfg.get("expected_output"),
+            agent=cfg.get("agent"),
             context=[self.paper_search_task()],
         )
 
     @task
     def report_generation_task(self) -> Task:
+        cfg = TASKS_CONFIG["report_generation_task"]
         return Task(
-            config=TASKS_CONFIG["report_generation_task"],
-            context=[
-                self.paper_search_task(),
-                self.research_analysis_task(),
-            ],
-            output_file="output/research_report.md",
+        description=cfg.get("description"),
+        expected_output=cfg.get("expected_output"),
+        agent=cfg.get("agent"),
+        context=[
+            self.paper_search_task(),
+            self.research_analysis_task(),
+        ],
+        output_file="output/research_report.md",
         )
 
     @crew
