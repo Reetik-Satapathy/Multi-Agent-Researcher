@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "knowledge-discovery-platform"
+version = "0.1.0"
+description = "Multi-agent AI research system for literature review, paper search, and report generation"
+readme = "README.md"
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "crewai>=0.86.0",
+    "crewai-tools>=0.17.0",
+    "python-dotenv>=1.0.0",
+    "requests>=2.31.0",
+    "pydantic>=2.0.0",
+]
+
+[project.scripts]
+research = "knowledge_discovery.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -1,0 +1,46 @@
+paper_search_task:
+  description: >
+    Search for academic research papers related to: {research_topic}
+
+    Use the paper_search tool with the research topic as the query.
+    Return a structured summary of the top relevant papers including title, authors,
+    year, abstract, citation count, source, and URL.
+  expected_output: >
+    A JSON-formatted list of research papers with complete metadata fields for each paper.
+  agent: paper_search_agent
+
+research_analysis_task:
+  description: >
+    Analyze the research landscape for: {research_topic}
+
+    Using the paper search results from the previous task:
+    1. Use the novelty_analysis tool with the research topic and the paper search JSON result set.
+    2. Interpret the heuristic novelty score and identify the most similar papers.
+    3. Summarize existing work that overlaps with the proposed idea.
+    4. Identify specific research gaps and future opportunities.
+
+    Provide a clear analysis with a novelty score (percentage), existing work list,
+    and research gaps.
+  expected_output: >
+    A structured research analysis containing novelty score, similar papers,
+    existing work summary, research gaps, and future research opportunities.
+  agent: research_analysis_agent
+
+report_generation_task:
+  description: >
+    Generate a comprehensive research report for: {research_topic}
+
+    Using outputs from paper search and research analysis tasks, create a
+    final report with these sections:
+
+    1. Executive Summary
+    2. Related Papers (with key details and URLs)
+    3. Research Analysis (novelty score and interpretation)
+    4. Research Gaps
+    5. References (all papers with URLs)
+
+    Write in clear, professional language suitable for researchers and students.
+  expected_output: >
+    A complete markdown research report with all five sections, properly formatted with
+    headings, bullet points, and reference links.
+  agent: report_agent

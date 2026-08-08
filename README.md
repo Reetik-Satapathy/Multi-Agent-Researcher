@@ -1,0 +1,131 @@
+# AI Knowledge Discovery Platform
+
+A multi-agent AI research system that helps researchers, students, and innovators explore existing knowledge before starting new research. Instead of manually searching multiple sources, specialized CrewAI agents search academic literature, analyze prior work, estimate novelty, and generate a structured research report.
+
+## Features (MVP)
+
+| Feature | Description |
+|---------|-------------|
+| Research Topic Search | Enter any research topic to start discovery |
+| Paper Search | arXiv + Crossref + OpenAlex (free, no API keys) |
+| Research Analysis | Novelty scoring, similarity, gap detection |
+| Report Generation | Markdown report with executive summary and references |
+
+## Architecture
+
+```
+User → CrewAI Orchestrator (OpenRouter LLM)
+         ├── Paper Search Agent       → paper_search tool       → arXiv / Crossref / OpenAlex
+         ├── Research Analysis Agent  → novelty_analysis tool
+         └── Report Agent
+                    ↓
+           Final Research Report (output/research_report.md)
+```
+
+Agents never call APIs directly — all external services are accessed through the tool layer.
+
+## Project Structure
+
+```
+src/knowledge_discovery/
+├── config/
+│   ├── agents.yaml          # Agent roles, goals, backstories
+│   └── tasks.yaml           # Task descriptions and expected outputs
+├── tools/
+│   ├── search_tools.py      # CrewAI paper search tools
+│   ├── analysis_tools.py    # Novelty analysis tool
+│   ├── arxiv_search.py      # arXiv client
+│   ├── crossref_search.py   # Crossref client
+│   └── openalex_search.py   # OpenAlex client
+├── utils/
+│   └── llm.py               # OpenRouter LLM configuration
+├── models/
+│   └── schemas.py           # Paper, ResearchAnalysis models
+├── crew.py                  # CrewAI orchestrator
+└── main.py                  # CLI entry point
+```
+
+## Setup
+
+### 1. Prerequisites
+
+- **Python 3.10–3.13** (CrewAI does not yet support Python 3.14+)
+- [OpenRouter](https://openrouter.ai/) API key
+
+All literature search APIs (arXiv, Crossref, OpenAlex) are free and require no API keys.
+
+### 2. Install
+
+```bash
+python -m venv .venv
+
+# Windows
+.venv\Scripts\activate
+
+# macOS / Linux
+source .venv/bin/activate
+
+pip install -r requirements.txt
+```
+
+### 3. Configure Environment
+
+```bash
+copy .env.example .env   # Windows
+# cp .env.example .env   # macOS / Linux
+```
+
+Edit `.env`:
+
+```env
+OPENROUTER_API_KEY=your_openrouter_api_key
+OPENROUTER_MODEL=openrouter/openai/gpt-4o-mini
+CROSSREF_MAILTO=your@email.com
+OPENALEX_MAILTO=your@email.com
+```
+
+## Usage
+
+From the project root:
+
+```bash
+# Default example topic
+python src/knowledge_discovery/main.py
+
+# Custom research topic
+python src/knowledge_discovery/main.py "AI for Crop Disease Detection using Drones"
+```
+
+The final report is saved to `output/research_report.md`.
+
+## Example Output
+
+The platform produces a report containing:
+
+- **Executive Summary** — overview of the research landscape
+- **Related Papers** — title, authors, year, citations, URLs
+- **Research Analysis** — novelty score, similar prior work
+- **Research Gaps** — underexplored areas
+- **References** — full citation list with links
+
+## API Keys
+
+| Service | Required | Purpose |
+|---------|----------|---------|
+| OpenRouter | Yes | Powers all CrewAI agents via `gpt-4o-mini` |
+| arXiv | No | Free public API |
+| Crossref | No | Free public API (contact email recommended) |
+| OpenAlex | No | Free public API (contact email recommended) |
+
+## Extending the Platform
+
+The modular design supports future additions:
+
+- Add Semantic Scholar or similar sources in `tools/`
+- Add new agents in `config/agents.yaml` and register them in `crew.py`
+- Change the OpenRouter model via `OPENROUTER_MODEL` in `.env`
+- Add a web UI or REST API on top of `main.run()`
+
+## License
+
+Apache License 2.0 — see [LICENSE](LICENSE).
