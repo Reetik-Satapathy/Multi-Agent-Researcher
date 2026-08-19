@@ -7,6 +7,12 @@ from crewai.project import CrewBase, agent, crew, task
 
 from knowledge_discovery.tools.analysis_tools import NoveltyAnalysisTool
 from knowledge_discovery.tools.search_tools import PaperSearchTool
+from knowledge_discovery.tools.llm_tools import (
+    QueryExpanderTool,
+    PaperSummarizerTool,
+    SemanticRerankerTool,
+    LLMNoveltyScorerTool,
+)
 from knowledge_discovery.utils.llm import get_llm
 
 CONFIG_DIR = Path(__file__).parent / "config"
@@ -33,18 +39,20 @@ class KnowledgeDiscoveryCrew:
 
     @agent
     def paper_search_agent(self) -> Agent:
+        # Include optional LLM-assisted tools: query expansion and summarization
         return Agent(
             config=AGENTS_CONFIG["paper_search_agent"],
-            tools=[PaperSearchTool()],
+            tools=[PaperSearchTool(), QueryExpanderTool(), PaperSummarizerTool()],
             llm=get_llm(),
             verbose=True,
         )
 
     @agent
     def research_analysis_agent(self) -> Agent:
+        # Add LLM-assisted re-ranking and LLM-based novelty scorer alongside heuristic analysis
         return Agent(
             config=AGENTS_CONFIG["research_analysis_agent"],
-            tools=[NoveltyAnalysisTool()],
+            tools=[NoveltyAnalysisTool(), SemanticRerankerTool(), LLMNoveltyScorerTool()],
             llm=get_llm(),
             verbose=True,
         )
@@ -64,6 +72,7 @@ class KnowledgeDiscoveryCrew:
             description=cfg.get("description"),
             expected_output=cfg.get("expected_output"),
             agent=self.paper_search_agent(),
+            output_file="output/papers.json",
         )
 
     @task
@@ -74,6 +83,7 @@ class KnowledgeDiscoveryCrew:
             expected_output=cfg.get("expected_output"),
             agent=self.research_analysis_agent(),
             context=[self.paper_search_task()],
+            output_file="output/analysis.json",
         )
 
     @task

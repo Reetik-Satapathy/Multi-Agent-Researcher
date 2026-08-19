@@ -11,6 +11,10 @@ Not executed automatically by the application — run manually:
 import importlib
 import os
 import sys
+from dotenv import load_dotenv
+
+# Load .env if present so checks reflect local environment file
+load_dotenv()
 
 REQUIRED_ENVS = ["OPENROUTER_API_KEY"]
 REQUIRED_PACKAGES = [
