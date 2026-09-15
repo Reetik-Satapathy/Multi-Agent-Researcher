@@ -13,6 +13,9 @@ class Paper(BaseModel):
     citation_count: int = 0
     source: str = ""
     url: str = ""
+    publication_type: str = ""
+    venue: str = ""
+    peer_review_status: str = "unknown"
 
 
 class ResearchAnalysis(BaseModel):

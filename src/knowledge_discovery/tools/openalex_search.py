@@ -38,6 +38,17 @@ def _parse_work(item: dict[str, Any]) -> Paper:
     url = item.get("doi") or item.get("id") or ""
     if url and not url.startswith("http"):
         url = f"https://doi.org/{url}"
+    publication_type = item.get("type", "") or ""
+    primary_source = (item.get("primary_location") or {}).get("source") or {}
+    venue = primary_source.get("display_name", "") or ""
+    source_type = primary_source.get("type", "") or ""
+    peer_review_status = (
+        "verified"
+        if publication_type in {"article", "conference-paper"}
+        and source_type in {"journal", "conference"}
+        and bool(item.get("doi") and venue and year)
+        else "unknown"
+    )
 
     return Paper(
         title=item.get("display_name") or item.get("title") or "Untitled",
@@ -47,6 +58,9 @@ def _parse_work(item: dict[str, Any]) -> Paper:
         citation_count=item.get("cited_by_count") or 0,
         source="OpenAlex",
         url=url,
+        publication_type=publication_type,
+        venue=venue,
+        peer_review_status=peer_review_status,
     )
 
 

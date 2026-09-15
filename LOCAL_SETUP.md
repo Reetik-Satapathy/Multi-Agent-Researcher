@@ -7,6 +7,7 @@ This repository is a Python-based multi-agent research system for literature dis
 What it does:
 - Accepts a research topic from the user
 - Searches academic sources (arXiv, Crossref, OpenAlex)
+- Uses only records that pass the peer-reviewed-only metadata filter for analysis and reporting
 - Deduplicates and normalizes results
 - Analyzes novelty, similar work, and research gaps
 - Produces a final markdown report saved to `output/research_report.md`
@@ -153,6 +154,11 @@ Main outputs:
 - `output/analysis.json` — novelty analysis output
 - `output/research_report.md` — final generated report
 
+The search output excludes arXiv preprints and excludes Crossref/OpenAlex records unless they
+have a DOI, publication year, accepted publication type, and journal or conference venue.
+Accepted records are marked with `peer_review_status: "verified"`. This is a conservative
+automated metadata policy; it does not independently audit the publisher's peer-review process.
+
 ## 8) Manual helper scripts
 
 This project also includes helper scripts for testing pieces of the workflow:
@@ -170,6 +176,28 @@ PYTHONPATH=src python run_analysis.py
 ```
 
 These are useful for manual debugging and isolated checks, but the main system entry point is `src/knowledge_discovery/main.py`.
+
+### List an exact number of papers independently
+
+To use the paper-search component without running novelty analysis or report generation:
+
+```bash
+PYTHONPATH=src python run_paper_search_agent.py "AI for Crop Disease Detection using Drones" 30
+```
+
+The second argument is the requested number of papers. It must be between 1 and 100. The command:
+
+- searches Crossref and OpenAlex
+- excludes arXiv and all records that fail the peer-reviewed metadata filter
+- ranks eligible papers by topic relevance, then citation count and publication year
+- prints the selected papers in the terminal
+- writes exactly that number to `output/paper_search_results.json`
+- exits with an error instead of writing a partial result if fewer papers are available
+
+The current ranking is deterministic and combines title/abstract topic overlap with citation
+impact and recency. If future product requirements call for deeper semantic relevance ranking,
+the ranking step can be replaced with the LLM reranker while retaining the same verification and
+exact-count checks.
 
 ## 9) Troubleshooting
 
