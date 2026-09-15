@@ -90,3 +90,11 @@ def openalex_headers() -> dict[str, str]:
     """OpenAlex recommends including a contact email in requests."""
     contact = os.getenv("OPENALEX_MAILTO", "research@example.com")
     return build_headers({"User-Agent": f"KnowledgeDiscoveryPlatform/0.1 (mailto:{contact})"})
+
+
+def semantic_scholar_headers() -> dict[str, str]:
+    """Return headers for the Semantic Scholar API."""
+    api_key = os.getenv("SEMANTIC_SCHOLAR_API_KEY")
+    if not api_key:
+        return build_headers()
+    return build_headers({"x-api-key": api_key})

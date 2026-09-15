@@ -39,6 +39,7 @@ from knowledge_discovery.tools.analysis_tools import (
 from knowledge_discovery.tools.llm_tools import _safe_load_json
 from knowledge_discovery.tools.crossref_search import _parse_item
 from knowledge_discovery.tools.openalex_search import _reconstruct_abstract, _parse_work
+from knowledge_discovery.tools.semantic_scholar_search import _parse_paper
 from knowledge_discovery.tools.search_tools import PaperSearchTool, _dedupe_papers
 
 
@@ -221,6 +222,36 @@ class ResearchPipelineTests(unittest.TestCase):
                 "DOI": "10.1000/preprint",
                 "type": "posted-content",
                 "published-online": {"date-parts": [[2024]]},
+            }
+        )
+        self.assertEqual(paper.peer_review_status, "unknown")
+
+    def test_semantic_scholar_parser_maps_verified_journal_metadata(self):
+        paper = _parse_paper(
+            {
+                "title": "Drone crop disease detection",
+                "authors": [{"name": "Alice Green"}],
+                "year": 2024,
+                "abstract": "A verified journal study.",
+                "citationCount": 42,
+                "externalIds": {"DOI": "10.1000/semantic-paper"},
+                "publicationTypes": ["JournalArticle"],
+                "journal": {"name": "Agricultural AI Journal"},
+            }
+        )
+        self.assertEqual(paper.source, "Semantic Scholar")
+        self.assertEqual(paper.publication_type, "journal-article")
+        self.assertEqual(paper.peer_review_status, "verified")
+        self.assertEqual(paper.url, "https://doi.org/10.1000/semantic-paper")
+
+    def test_semantic_scholar_parser_excludes_arxiv_records(self):
+        paper = _parse_paper(
+            {
+                "title": "A preprint",
+                "year": 2024,
+                "externalIds": {"ArXiv": "2401.00001", "DOI": "10.48550/arXiv.2401.00001"},
+                "publicationTypes": ["JournalArticle", "ArXiv"],
+                "journal": {"name": "Repository"},
             }
         )
         self.assertEqual(paper.peer_review_status, "unknown")

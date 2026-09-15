@@ -4,8 +4,8 @@ paper_search_task:
 
     First use the query_expander tool to generate several high-recall search variations for
     the     topic. Then call the paper_search tool with the most promising query terms. The tool must
-    exclude arXiv preprints and any Crossref/OpenAlex record without verified peer-reviewed
-    publication metadata. Deduplicate duplicate papers, prefer DOI-based matches where possible,
+    exclude arXiv preprints and any Crossref/OpenAlex/Semantic Scholar record without verified
+    peer-reviewed publication metadata. Deduplicate duplicate papers, prefer DOI-based matches where possible,
     and return only eligible papers including title, authors, year, abstract, citation count,
     source, URL, publication type, venue, and peer-review status.
   expected_output: >

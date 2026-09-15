@@ -94,6 +94,7 @@ OPENROUTER_API_KEY=your_openrouter_api_key_here
 OPENROUTER_MODEL=openrouter/openai/gpt-4o-mini
 CROSSREF_MAILTO=your_email@example.com
 OPENALEX_MAILTO=your_email@example.com
+SEMANTIC_SCHOLAR_API_KEY=your_semantic_scholar_api_key
 CREWAI_TELEMETRY_OPT_OUT=true
 ```
 
@@ -101,6 +102,7 @@ Notes:
 - `OPENROUTER_API_KEY` is required.
 - `OPENROUTER_MODEL` is optional, but recommended.
 - `CROSSREF_MAILTO` and `OPENALEX_MAILTO` help with polite API usage and are optional but recommended.
+- `SEMANTIC_SCHOLAR_API_KEY` enables Semantic Scholar discovery and citation metadata.
 - `.env` is local-only and should not be committed to Git.
 
 ## 5) Validate the setup
@@ -199,7 +201,44 @@ impact and recency. If future product requirements call for deeper semantic rele
 the ranking step can be replaced with the LLM reranker while retaining the same verification and
 exact-count checks.
 
-## 9) Troubleshooting
+## 9) Analyze a research-paper PDF
+
+The PDF workflow is independent of paper search and the full CrewAI report workflow.
+
+Extract and summarize a PDF:
+
+```bash
+PYTHONPATH=src python run_pdf_analysis.py /path/to/paper.pdf
+```
+
+Ask one question:
+
+```bash
+PYTHONPATH=src python ask_pdf.py /path/to/paper.pdf "What dataset did the authors use?"
+```
+
+Start an interactive session:
+
+```bash
+PYTHONPATH=src python ask_pdf.py /path/to/paper.pdf --interactive
+```
+
+Artifacts are written to:
+
+```text
+output/documents/<document_id>/
+├── metadata.json
+├── extracted.md
+├── chunks.json
+└── summary.json
+```
+
+The PDF must be a non-encrypted, text-based PDF no larger than 50 MB and 500 pages. Scanned
+image-only PDFs are detected and rejected because OCR is not configured in this first version.
+Question answers use page-aware lexical retrieval and the OpenRouter LLM, and are instructed to
+cite pages and avoid inventing information.
+
+## 10) Troubleshooting
 
 ### Problem: ImportError or package issues
 
@@ -236,7 +275,7 @@ uv venv --python 3.12 .venv
 source .venv/bin/activate
 ```
 
-## 10) Typical Local Workflow
+## 11) Typical Local Workflow
 
 ```bash
 cd /home/reet/Projects/Multi-Agent-Researcher.worktrees/project-analysis-and-understanding

@@ -7,7 +7,7 @@ A multi-agent AI research system that helps researchers, students, and innovator
 | Feature | Description |
 |---------|-------------|
 | Research Topic Search | Enter any research topic to start discovery |
-| Paper Search | Crossref + OpenAlex with conservative peer-reviewed-only filtering |
+| Paper Search | Crossref + OpenAlex + Semantic Scholar with conservative peer-reviewed-only filtering |
 | Research Analysis | Novelty scoring, similarity, gap detection |
 | Report Generation | Markdown report with executive summary and references |
 
@@ -15,7 +15,7 @@ A multi-agent AI research system that helps researchers, students, and innovator
 
 ```
 User → CrewAI Orchestrator (OpenRouter LLM)
-         ├── Paper Search Agent       → paper_search tool       → Crossref / OpenAlex
+         ├── Paper Search Agent       → paper_search tool       → Crossref / OpenAlex / Semantic Scholar
          ├── Research Analysis Agent  → novelty_analysis tool
          └── Report Agent
                     ↓
@@ -52,9 +52,10 @@ src/knowledge_discovery/
 - **Python 3.10–3.13** (CrewAI does not yet support Python 3.14+)
 - [OpenRouter](https://openrouter.ai/) API key
 
-All literature search APIs (arXiv, Crossref, OpenAlex) are free and require no API keys. arXiv
-remains available as a parser in the source tree, but is intentionally excluded from the
-peer-reviewed-only production search.
+All literature search APIs (arXiv, Crossref, OpenAlex) are free and require no API keys.
+Semantic Scholar uses the optional API key shown below for reliable access. arXiv remains
+available as a parser in the source tree, but is intentionally excluded from the peer-reviewed-only
+production search.
 
 ### 2. Install
 
@@ -84,6 +85,7 @@ OPENROUTER_API_KEY=your_openrouter_api_key
 OPENROUTER_MODEL=openrouter/openai/gpt-4o-mini
 CROSSREF_MAILTO=your@email.com
 OPENALEX_MAILTO=your@email.com
+SEMANTIC_SCHOLAR_API_KEY=your_semantic_scholar_api_key
 ```
 
 ## Usage
@@ -99,11 +101,22 @@ python src/knowledge_discovery/main.py "AI for Crop Disease Detection using Dron
 
 # Independently list exactly 30 verified papers
 python run_paper_search_agent.py "AI for Crop Disease Detection using Drones" 30
+
+# Extract and summarize a local research-paper PDF
+python run_pdf_analysis.py paper.pdf
+
+# Ask a grounded question about a local research-paper PDF
+python ask_pdf.py paper.pdf "What dataset did the authors use?"
+
+# Start an interactive question session
+python ask_pdf.py paper.pdf --interactive
 ```
 
 The final report is saved to `output/research_report.md`.
 The independent search command saves its exact-count result to
 `output/paper_search_results.json`.
+PDF artifacts are saved under `output/documents/<document_id>/`, including metadata, extracted
+Markdown, page-aware chunks, and the generated summary.
 
 ## Example Output
 
@@ -118,11 +131,19 @@ The platform produces a report containing:
 ### Peer-reviewed-only output
 
 The final paper set is filtered conservatively. arXiv results are excluded because they are
-preprints, and Crossref/OpenAlex results are included only when their metadata identifies an
+preprints, and Crossref/OpenAlex/Semantic Scholar results are included only when their metadata identifies an
 accepted publication type, DOI, publication year, and journal or conference venue. Records that
 cannot meet these checks are excluded before novelty analysis and report generation. Every
 accepted paper includes `peer_review_status: "verified"`. This is an automated metadata policy,
 not an independent guarantee from the APIs that a review process occurred.
+
+### PDF analysis
+
+The PDF feature is separate from paper search and the full research crew. It uses PyMuPDF for
+validation, metadata, and page text, and PyMuPDF4LLM for Markdown extraction. It rejects encrypted,
+empty, oversized, and image-only PDFs because OCR is not configured yet. Questions use lexical
+retrieval over page-aware chunks and the OpenRouter LLM; answers are instructed to cite source
+pages and to say when the paper does not support an answer.
 
 ## API Keys
 
