@@ -93,23 +93,26 @@ SEMANTIC_SCHOLAR_API_KEY=your_semantic_scholar_api_key
 From the project root:
 
 ```bash
+# Activate the environment first
+source .venv/bin/activate
+
 # Default example topic
-python src/knowledge_discovery/main.py
+PYTHONPATH=src python src/knowledge_discovery/main.py
 
 # Custom research topic
-python src/knowledge_discovery/main.py "AI for Crop Disease Detection using Drones"
+PYTHONPATH=src python src/knowledge_discovery/main.py "AI for Crop Disease Detection using Drones"
 
 # Independently list exactly 30 verified papers
-python run_paper_search_agent.py "AI for Crop Disease Detection using Drones" 30
+PYTHONPATH=src python run_paper_search_agent.py "AI for Crop Disease Detection using Drones" 30
 
 # Extract and summarize a local research-paper PDF
-python run_pdf_analysis.py paper.pdf
+PYTHONPATH=src python run_pdf_analysis.py paper.pdf
 
 # Ask a grounded question about a local research-paper PDF
-python ask_pdf.py paper.pdf "What dataset did the authors use?"
+PYTHONPATH=src python ask_pdf.py paper.pdf "What dataset did the authors use?"
 
 # Start an interactive question session
-python ask_pdf.py paper.pdf --interactive
+PYTHONPATH=src python ask_pdf.py paper.pdf --interactive
 ```
 
 The final report is saved to `output/research_report.md`.
@@ -117,6 +120,36 @@ The independent search command saves its exact-count result to
 `output/paper_search_results.json`.
 PDF artifacts are saved under `output/documents/<document_id>/`, including metadata, extracted
 Markdown, page-aware chunks, and the generated summary.
+
+### Running the full CrewAI workflow
+
+The full crew runs three sequential agents:
+
+1. **Paper Search Agent** — expands the topic and searches Crossref, OpenAlex, and Semantic
+   Scholar for verified papers.
+2. **Research Analysis Agent** — calculates novelty, identifies similar work, and analyzes gaps.
+3. **Report Agent** — generates the detailed Markdown report.
+
+The crew writes:
+
+```text
+output/papers.json
+output/analysis.json
+output/research_report.md
+```
+
+The report includes executive summary, search methodology, research landscape, related papers,
+comparative analysis, novelty analysis, research gaps, future opportunities, practical takeaways,
+and references.
+
+You can also install the project as an editable package:
+
+```bash
+uv pip install -e .
+research "AI for Crop Disease Detection using Drones"
+```
+
+If `research` is unavailable, use the explicit `PYTHONPATH=src python ...` command above.
 
 ## Example Output
 

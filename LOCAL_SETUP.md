@@ -143,6 +143,60 @@ Or another example:
 PYTHONPATH=src python src/knowledge_discovery/main.py "Graph Neural Networks for Drug Discovery"
 ```
 
+### Run the full CrewAI workflow
+
+The full crew runs three sequential agents:
+
+1. **Paper Search Agent** — expands the topic and searches Crossref, OpenAlex, and Semantic
+   Scholar for verified papers.
+2. **Research Analysis Agent** — calculates novelty, identifies similar work, and analyzes gaps.
+3. **Report Agent** — generates the detailed Markdown report.
+
+Default topic:
+
+```bash
+PYTHONPATH=src python src/knowledge_discovery/main.py
+```
+
+Custom topic:
+
+```bash
+PYTHONPATH=src python src/knowledge_discovery/main.py \
+  "AI for Crop Disease Detection using Drones"
+```
+
+Expected output files:
+
+```text
+output/
+├── papers.json
+├── analysis.json
+└── research_report.md
+```
+
+The report includes:
+
+- executive summary
+- scope and search method
+- research landscape
+- detailed related-paper entries
+- cross-paper comparative analysis
+- novelty analysis
+- research gaps and limitations
+- future research opportunities
+- practical takeaways
+- references
+
+Optional editable installation:
+
+```bash
+uv pip install -e .
+research "AI for Crop Disease Detection using Drones"
+```
+
+If the `research` command is unavailable, use the explicit `PYTHONPATH=src python ...`
+command instead.
+
 ## 7) Expected output
 
 The application writes output files to:

@@ -36,21 +36,72 @@ report_generation_task:
     Generate a comprehensive research report for: {research_topic}
 
     Using outputs from paper search and research analysis tasks, create a
-    final report with these sections:
+    detailed final report. Use the paper_summarizer tool on the most relevant papers
+    before writing when abstracts are available. Do not just repeat the task outputs:
+    synthesize and compare the evidence across papers. Every factual claim about a
+    paper must be supported by supplied metadata, its abstract, or its URL. Never
+    invent experimental details, datasets, metrics, conclusions, or peer-review status.
 
     Include only papers with peer_review_status "verified"; do not add excluded or unverified
-    records. State that the report uses a conservative peer-reviewed-only filter.
+    records. State that the report uses a conservative peer-reviewed-only metadata filter
+    and explain that verification is not an independent audit of the publisher's review process.
 
-    1. Executive Summary
-    2. Related Papers (with key details and URLs)
-    3. Research Analysis (novelty score and interpretation)
-    4. Research Gaps
-    5. References (all papers with URLs)
+    Use this exact structure and include all sections:
 
-    Where helpful, use the paper_summarizer tool to create concise summaries for the most relevant
-    works before writing the final report. Write in clear, professional language suitable for
-    researchers and students.
+    # Research Report: {research_topic}
+
+    ## 1. Executive Summary
+    Write 4-6 substantive paragraphs covering the problem, the overall state of the
+    literature, the strongest evidence, the main limitations, and the practical meaning
+    of the findings.
+
+    ## 2. Scope and Search Method
+    Describe the searched sources, the peer-reviewed-only inclusion policy, the number of
+    eligible papers, the ranking/synthesis approach, and important data limitations.
+
+    ## 3. Research Landscape
+    Explain the main themes, technologies, application domains, data types, and recurring
+    approaches found across the papers. Distinguish well-supported patterns from tentative
+    observations.
+
+    ## 4. Related Papers
+    Include every eligible paper used in the analysis. For each paper provide:
+    title, authors, year, venue, source, publication type, citation count, DOI/URL,
+    a metadata-grounded summary, its contribution or relevance to the topic, and any
+    limitations that are explicitly supported by the available information. Use numbered
+    subsections or a comparison table; do not collapse the papers into generic bullets.
+
+    ## 5. Comparative Analysis
+    Compare the papers across methodology, input data or sensors, model/algorithm family,
+    evaluation setting, target application, and reported outcomes whenever those fields are
+    available. Clearly label unavailable information. Include a concise comparison table.
+
+    ## 6. Research Analysis and Novelty
+    Report the heuristic novelty score, explain what the score measures, discuss the most
+    similar prior work, and separate algorithmic evidence from qualitative interpretation.
+    Make clear that the score is not a guarantee of research originality.
+
+    ## 7. Research Gaps and Limitations
+    Identify specific gaps supported by the literature. Also discuss limitations of the
+    search and metadata, including missing abstracts, source bias, citation-count bias,
+    and the fact that API metadata cannot independently prove peer review.
+
+    ## 8. Future Research Opportunities
+    Give at least 5 concrete, technically meaningful opportunities. For each, explain the
+    motivation, expected contribution, and how it differs from the identified prior work.
+
+    ## 9. Practical Takeaways
+    Give separate recommendations for a researcher, an engineering team, and a practitioner
+    deciding whether to pursue the topic.
+
+    ## 10. References
+    List all included papers with authors, year, title, venue, DOI/URL, and source.
+
+    Write in clear, professional language suitable for researchers and students. Prefer
+    detailed synthesis over filler, and do not omit sections simply because metadata is
+    incomplete; state what could not be determined.
   expected_output: >
-    A complete markdown research report with all five sections, properly formatted with
-    headings, bullet points, and reference links.
+    A detailed markdown research report containing all ten required sections, substantive
+    cross-paper synthesis, a comparison table, paper-level metadata and summaries, explicit
+    evidence limitations, and complete references.
   agent: report_agent
