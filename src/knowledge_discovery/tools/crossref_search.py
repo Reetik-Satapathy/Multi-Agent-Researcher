@@ -17,7 +17,7 @@ def search_crossref(query: str, limit: int = 10) -> list[Paper]:
             "query": query,
             "rows": min(limit, 100),
             "sort": "relevance",
-            "select": "DOI,title,author,published-print,published-online,abstract,is-referenced-by-count,type",
+            "select": "DOI,title,author,published-print,published-online,abstract,is-referenced-by-count,type,container-title,publisher",
         },
         headers=crossref_headers(),
     )
@@ -35,6 +35,15 @@ def _parse_item(item: dict[str, Any]) -> Paper:
     year = _extract_year(item)
     doi = item.get("DOI", "")
     abstract = item.get("abstract", "") or ""
+    publication_type = item.get("type", "") or ""
+    venue_list = item.get("container-title") or []
+    venue = venue_list[0] if venue_list else ""
+    peer_review_status = (
+        "verified"
+        if publication_type in {"journal-article", "proceedings-article"}
+        and bool(doi and venue and year)
+        else "unknown"
+    )
 
     return Paper(
         title=title,
@@ -44,6 +53,9 @@ def _parse_item(item: dict[str, Any]) -> Paper:
         citation_count=item.get("is-referenced-by-count") or 0,
         source="Crossref",
         url=f"https://doi.org/{doi}" if doi else "",
+        publication_type=publication_type,
+        venue=venue,
+        peer_review_status=peer_review_status,
     )
 
 

@@ -37,37 +37,16 @@ from knowledge_discovery.tools.analysis_tools import (
     detect_research_gaps,
 )
 from knowledge_discovery.tools.llm_tools import _safe_load_json
+from knowledge_discovery.tools.crossref_search import _parse_item
 from knowledge_discovery.tools.openalex_search import _reconstruct_abstract, _parse_work
 from knowledge_discovery.tools.search_tools import PaperSearchTool, _dedupe_papers
 
 
 class ResearchPipelineTests(unittest.TestCase):
-    def test_paper_search_deduplicates_and_formats(self):
-        with patch("knowledge_discovery.tools.search_tools.search_arxiv") as mock_arxiv, patch(
-            "knowledge_discovery.tools.search_tools.search_crossref"
-        ) as mock_crossref, patch(
+    def test_paper_search_keeps_only_verified_papers_and_formats(self):
+        with patch("knowledge_discovery.tools.search_tools.search_crossref") as mock_crossref, patch(
             "knowledge_discovery.tools.search_tools.search_openalex"
         ) as mock_openalex:
-            mock_arxiv.return_value = [
-                Paper(
-                    title="Crop disease detection using drones",
-                    authors=["Alice Green"],
-                    year=2024,
-                    abstract="Detect plant disease using drone imagery and deep learning.",
-                    citation_count=8,
-                    source="arXiv",
-                    url="https://doi.org/10.1000/duplicate-id",
-                ),
-                Paper(
-                    title="Drone imaging and crop stress classification",
-                    authors=["Bob White"],
-                    year=2023,
-                    abstract="A study of crop stress classification from aerial images.",
-                    citation_count=3,
-                    source="arXiv",
-                    url="https://doi.org/10.1000/unique-id",
-                ),
-            ]
             mock_crossref.return_value = [
                 Paper(
                     title="Crop disease detection using drones",
@@ -77,16 +56,64 @@ class ResearchPipelineTests(unittest.TestCase):
                     citation_count=8,
                     source="Crossref",
                     url="https://doi.org/10.1000/duplicate-id",
+                    publication_type="journal-article",
+                    venue="Journal of Agricultural AI",
+                    peer_review_status="verified",
+                ),
+                Paper(
+                    title="Drone imaging and crop stress classification",
+                    authors=["Bob White"],
+                    year=2023,
+                    abstract="A study of crop stress classification from aerial images.",
+                    citation_count=3,
+                    source="Crossref",
+                    url="https://doi.org/10.1000/unique-id",
+                    publication_type="posted-content",
+                    venue="A preprint server",
+                    peer_review_status="unknown",
                 )
             ]
             mock_openalex.return_value = []
 
             output = json.loads(PaperSearchTool()._run("crop disease detection using drones", limit=5))
 
-            self.assertEqual(output["count"], 2)
-            self.assertEqual(len(output["papers"]), 2)
+            self.assertEqual(output["count"], 1)
+            self.assertEqual(output["excluded_count"], 1)
+            self.assertEqual(len(output["papers"]), 1)
             self.assertTrue(all("title" in paper for paper in output["papers"]))
             self.assertTrue(all("url" in paper for paper in output["papers"]))
+            self.assertEqual(output["papers"][0]["peer_review_status"], "verified")
+
+    def test_paper_search_ranks_by_citations_then_recency(self):
+        with patch("knowledge_discovery.tools.search_tools.search_crossref") as mock_crossref, patch(
+            "knowledge_discovery.tools.search_tools.search_openalex"
+        ) as mock_openalex:
+            mock_crossref.return_value = [
+                Paper(
+                    title="Recent low-impact paper",
+                    year=2025,
+                    citation_count=2,
+                    source="Crossref",
+                    url="https://doi.org/10.1000/recent",
+                    publication_type="journal-article",
+                    venue="Journal",
+                    peer_review_status="verified",
+                ),
+                Paper(
+                    title="Highly cited paper",
+                    year=2018,
+                    citation_count=100,
+                    source="Crossref",
+                    url="https://doi.org/10.1000/cited",
+                    publication_type="journal-article",
+                    venue="Journal",
+                    peer_review_status="verified",
+                ),
+            ]
+            mock_openalex.return_value = []
+
+            output = json.loads(PaperSearchTool()._run("recent paper", limit=10))
+            self.assertEqual(output["papers"][0]["title"], "Recent low-impact paper")
 
     def test_dedupe_prefers_doi_key(self):
         papers = [
@@ -169,6 +196,34 @@ class ResearchPipelineTests(unittest.TestCase):
         self.assertEqual(paper.source, "OpenAlex")
         self.assertEqual(paper.year, 2024)
         self.assertEqual(paper.url, "https://doi.org/10.1000/new-paper")
+        self.assertEqual(paper.peer_review_status, "unknown")
+
+    def test_crossref_parser_verifies_supported_publication_metadata(self):
+        paper = _parse_item(
+            {
+                "title": ["A peer-reviewed article"],
+                "author": [{"given": "Alice", "family": "Green"}],
+                "DOI": "10.1000/article",
+                "type": "journal-article",
+                "container-title": ["Journal of Agricultural AI"],
+                "published-online": {"date-parts": [[2024]]},
+                "is-referenced-by-count": 4,
+            }
+        )
+        self.assertEqual(paper.peer_review_status, "verified")
+        self.assertEqual(paper.publication_type, "journal-article")
+        self.assertEqual(paper.venue, "Journal of Agricultural AI")
+
+    def test_crossref_parser_rejects_missing_venue_or_unsupported_type(self):
+        paper = _parse_item(
+            {
+                "title": ["A preprint"],
+                "DOI": "10.1000/preprint",
+                "type": "posted-content",
+                "published-online": {"date-parts": [[2024]]},
+            }
+        )
+        self.assertEqual(paper.peer_review_status, "unknown")
 
     def test_safe_load_json_handles_trailing_text(self):
         payload = 'Here is the answer: {"status": "ok", "items": [1, 2, 3]} trailing noise'

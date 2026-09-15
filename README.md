@@ -7,7 +7,7 @@ A multi-agent AI research system that helps researchers, students, and innovator
 | Feature | Description |
 |---------|-------------|
 | Research Topic Search | Enter any research topic to start discovery |
-| Paper Search | arXiv + Crossref + OpenAlex (free, no API keys) |
+| Paper Search | Crossref + OpenAlex with conservative peer-reviewed-only filtering |
 | Research Analysis | Novelty scoring, similarity, gap detection |
 | Report Generation | Markdown report with executive summary and references |
 
@@ -15,7 +15,7 @@ A multi-agent AI research system that helps researchers, students, and innovator
 
 ```
 User → CrewAI Orchestrator (OpenRouter LLM)
-         ├── Paper Search Agent       → paper_search tool       → arXiv / Crossref / OpenAlex
+         ├── Paper Search Agent       → paper_search tool       → Crossref / OpenAlex
          ├── Research Analysis Agent  → novelty_analysis tool
          └── Report Agent
                     ↓
@@ -52,7 +52,9 @@ src/knowledge_discovery/
 - **Python 3.10–3.13** (CrewAI does not yet support Python 3.14+)
 - [OpenRouter](https://openrouter.ai/) API key
 
-All literature search APIs (arXiv, Crossref, OpenAlex) are free and require no API keys.
+All literature search APIs (arXiv, Crossref, OpenAlex) are free and require no API keys. arXiv
+remains available as a parser in the source tree, but is intentionally excluded from the
+peer-reviewed-only production search.
 
 ### 2. Install
 
@@ -94,9 +96,14 @@ python src/knowledge_discovery/main.py
 
 # Custom research topic
 python src/knowledge_discovery/main.py "AI for Crop Disease Detection using Drones"
+
+# Independently list exactly 30 verified papers
+python run_paper_search_agent.py "AI for Crop Disease Detection using Drones" 30
 ```
 
 The final report is saved to `output/research_report.md`.
+The independent search command saves its exact-count result to
+`output/paper_search_results.json`.
 
 ## Example Output
 
@@ -107,6 +114,15 @@ The platform produces a report containing:
 - **Research Analysis** — novelty score, similar prior work
 - **Research Gaps** — underexplored areas
 - **References** — full citation list with links
+
+### Peer-reviewed-only output
+
+The final paper set is filtered conservatively. arXiv results are excluded because they are
+preprints, and Crossref/OpenAlex results are included only when their metadata identifies an
+accepted publication type, DOI, publication year, and journal or conference venue. Records that
+cannot meet these checks are excluded before novelty analysis and report generation. Every
+accepted paper includes `peer_review_status: "verified"`. This is an automated metadata policy,
+not an independent guarantee from the APIs that a review process occurred.
 
 ## API Keys
 
