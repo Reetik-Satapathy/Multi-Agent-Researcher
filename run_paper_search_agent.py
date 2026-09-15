@@ -7,11 +7,15 @@ import json
 import sys
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 SRC = Path(__file__).resolve().parent / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from knowledge_discovery.tools.search_tools import PaperSearchTool
+
+load_dotenv()
 
 
 def parse_args() -> argparse.Namespace:

@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 
 from knowledge_discovery.tools.crossref_search import search_crossref
 from knowledge_discovery.tools.openalex_search import search_openalex
+from knowledge_discovery.tools.semantic_scholar_search import search_semantic_scholar
 
 
 class PaperSearchInput(BaseModel):
@@ -34,7 +35,7 @@ def _paper_to_dict(paper) -> dict:
 class PaperSearchTool(BaseTool):
     name: str = "paper_search"
     description: str = (
-        "Search academic research papers using Crossref and OpenAlex, excluding preprints and "
+        "Search academic research papers using Crossref, OpenAlex, and Semantic Scholar, excluding preprints and "
         "records whose peer-review status cannot be verified. Returns structured JSON with "
         "publication metadata and only verified peer-reviewed candidates."
     )
@@ -44,7 +45,11 @@ class PaperSearchTool(BaseTool):
         papers = []
         errors = []
 
-        for name, search_fn in (("Crossref", search_crossref), ("OpenAlex", search_openalex)):
+        for name, search_fn in (
+            ("Crossref", search_crossref),
+            ("OpenAlex", search_openalex),
+            ("Semantic Scholar", search_semantic_scholar),
+        ):
             try:
                 papers.extend(search_fn(query, limit=limit))
             except Exception as exc:
