@@ -61,6 +61,7 @@ class KnowledgeDiscoveryCrew:
     def report_agent(self) -> Agent:
         return Agent(
             config=AGENTS_CONFIG["report_agent"],
+            tools=[PaperSummarizerTool()],
             llm=get_llm(),
             verbose=True,
         )
