@@ -29,6 +29,8 @@ import fitz
 
 from knowledge_discovery.pdf_processing import (
     answer_question,
+    answer_documents_question,
+    compare_documents,
     extract_pdf,
     validate_pdf,
 )
@@ -92,6 +94,50 @@ class PdfProcessingTests(unittest.TestCase):
 
             self.assertIn("PlantVillage", answer)
             self.assertIn("[p. 4]", answer)
+
+    def test_compare_documents_and_questions_use_both_papers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            document_dirs = []
+            for index, text in enumerate([
+                "Paper one uses CNNs for crop classification.",
+                "Paper two uses transformers for crop classification.",
+            ], start=1):
+                document_dir = root / f"doc-{index}"
+                document_dir.mkdir()
+                (document_dir / "metadata.json").write_text(json.dumps({
+                    "document_id": f"doc-{index}",
+                    "filename": f"paper-{index}.pdf",
+                    "title": f"Paper {index}",
+                    "authors": [],
+                    "page_count": 1,
+                    "subject": "",
+                    "doi": None,
+                }))
+                (document_dir / "chunks.json").write_text(json.dumps([{
+                    "chunk_id": f"chunk-{index}",
+                    "document_id": f"doc-{index}",
+                    "text": text,
+                    "page_start": 1,
+                    "page_end": 1,
+                    "section": "Methods",
+                }]))
+                document_dirs.append(document_dir)
+
+            fake_llm = types.SimpleNamespace(call=lambda messages: json.dumps({
+                "overview": "The papers use different model families.",
+                "similarities": ["Both classify crops."],
+                "differences": ["CNNs versus transformers."],
+                "research_gaps": ["Cross-dataset validation."],
+                "comparison_table": [{"metric": "Model", "values": {"Paper 1": "CNN", "Paper 2": "Transformer"}}],
+            }) if "Compare the two" in messages[0]["content"] else "Paper 1 uses CNNs; Paper 2 uses transformers. [Document 1, p. 1] [Document 2, p. 1]")
+            with patch("knowledge_discovery.pdf_processing.get_llm", return_value=fake_llm):
+                comparison = compare_documents(document_dirs)
+                answer = answer_documents_question(document_dirs, "crop classification")
+
+            self.assertEqual(comparison["comparison_table"][0]["values"]["Paper 2"], "Transformer")
+            self.assertIn("Paper 1", answer)
+            self.assertIn("Paper 2", answer)
 
 
 if __name__ == "__main__":

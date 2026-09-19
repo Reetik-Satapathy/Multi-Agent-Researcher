@@ -53,6 +53,29 @@ class ChatMessage(BaseModel):
     content: str = Field(min_length=1, max_length=4000)
 
 
+class DocumentComparisonRequest(BaseModel):
+    document_ids: list[str] = Field(min_length=2, max_length=2)
+
+
+class ComparisonQuestionRequest(DocumentComparisonRequest):
+    question: str = Field(min_length=1, max_length=2000)
+    history: list[ChatMessage] = Field(default_factory=list, max_length=8)
+
+
+def _document_paths(document_ids: list[str]) -> list[Path]:
+    if len(document_ids) != 2 or len(set(document_ids)) != 2:
+        raise HTTPException(status_code=422, detail="Exactly two different documents are required.")
+    paths = []
+    for document_id in document_ids:
+        if Path(document_id).name != document_id:
+            raise HTTPException(status_code=400, detail="Invalid document identifier.")
+        path = DOCUMENT_ROOT / document_id
+        if not path.is_dir():
+            raise HTTPException(status_code=404, detail=f"Document not found: {document_id}")
+        paths.append(path)
+    return paths
+
+
 @app.get("/api/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -108,6 +131,38 @@ async def upload_document(file: UploadFile = File(...)) -> dict[str, Any]:
     finally:
         temporary_path.unlink(missing_ok=True)
     return {"metadata": metadata, "summary": summary}
+
+
+@app.post("/api/documents/compare")
+def compare_documents_endpoint(request: DocumentComparisonRequest) -> dict[str, Any]:
+    from knowledge_discovery.pdf_processing import compare_documents
+
+    paths = _document_paths(request.document_ids)
+    try:
+        comparison = compare_documents(paths)
+        metadata = [
+            json.loads((path / "metadata.json").read_text(encoding="utf-8"))
+            for path in paths
+        ]
+    except (OSError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return {"document_ids": request.document_ids, "documents": metadata, "comparison": comparison}
+
+
+@app.post("/api/documents/compare/questions")
+def ask_comparison_question(request: ComparisonQuestionRequest) -> dict[str, Any]:
+    from knowledge_discovery.pdf_processing import answer_documents_question
+
+    paths = _document_paths(request.document_ids)
+    try:
+        answer = answer_documents_question(
+            paths,
+            request.question,
+            history=[message.model_dump() for message in request.history],
+        )
+    except (OSError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return {"document_ids": request.document_ids, "question": request.question, "answer": answer}
 
 
 @app.post("/api/documents/{document_id}/questions")

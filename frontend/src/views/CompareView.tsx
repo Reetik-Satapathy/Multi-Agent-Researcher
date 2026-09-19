@@ -13,6 +13,7 @@ import type { Paper, PaperComparison } from '../types/research';
 import { ComparisonTable } from '../components/ComparisonTable';
 import { LoadingState } from '../components/LoadingState';
 import { aiService } from '../services/aiService';
+import { PdfComparisonPanel } from '../components/PdfComparisonPanel';
 
 interface CompareViewProps {
   comparedPapers: Paper[];
@@ -51,6 +52,7 @@ export const CompareView: React.FC<CompareViewProps> = ({
 
   return (
     <div className="space-y-8 pb-12">
+      <PdfComparisonPanel />
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>

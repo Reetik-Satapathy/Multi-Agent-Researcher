@@ -329,6 +329,8 @@ Open `http://127.0.0.1:5173/`. The web workflows call these API routes:
 - `POST /api/research/report` — synchronous full CrewAI report generation
 - `POST /api/documents/upload` — PDF extraction and summary
 - `POST /api/documents/{document_id}/questions` — grounded PDF question answering
+- `POST /api/documents/compare` — structured comparison of two uploaded PDFs
+- `POST /api/documents/compare/questions` — context-aware questions across both PDFs
 
 Report generation can take several minutes because it runs the complete crew
 synchronously. PDF uploads create artifacts under `output/documents/<document_id>/`.

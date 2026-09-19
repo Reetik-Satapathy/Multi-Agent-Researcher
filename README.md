@@ -67,6 +67,8 @@ The frontend currently supports three backend-powered workflows:
   the generated report in the report workspace.
 - **Ask a PDF** — upload a selectable-text research paper, receive an LLM-generated
   summary, and ask grounded questions about the paper.
+- **Compare PDFs** — upload two papers, generate a structured comparison, and ask
+  follow-up questions grounded in both documents.
 
 The PDF chat sends only the latest eight user/assistant messages from the current
 document conversation with each question. This lets follow-up questions refer to
@@ -82,6 +84,8 @@ POST /api/papers/search
 POST /api/research/report
 POST /api/documents/upload
 POST /api/documents/{document_id}/questions
+POST /api/documents/compare
+POST /api/documents/compare/questions
 ```
 
 ## Validate
