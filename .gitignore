@@ -11,6 +11,8 @@ backend/*.egg-info/
 backend/.pytest_cache/
 backend/.mypy_cache/
 backend/output/
+output/
+src/knowledge_discovery_platform.egg-info/
 
 # Frontend dependencies and build output
 frontend/node_modules/
