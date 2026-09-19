@@ -1,6 +1,8 @@
 # Local Setup and Run Guide
 
-This repository is a Python-based multi-agent research system for literature discovery. It searches academic databases, analyzes novelty and research gaps, and generates a structured markdown research report.
+This repository is a full-stack research system. The `backend/` directory
+contains the Python multi-agent research service and FastAPI API; the sibling
+`frontend/` directory contains the React/Vite workspace.
 
 Run commands in this guide from the `backend/` directory:
 
@@ -77,13 +79,13 @@ With the venv activated:
 
 ```bash
 python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
+python -m pip install -e '.[dev]'
 ```
 
 If using `uv`:
 
 ```bash
-uv pip install -r requirements.txt
+uv pip install -e '.[dev]'
 ```
 
 ## 4) Set up environment variables
@@ -126,7 +128,7 @@ Expected behavior:
 
 ## 6) Run the app
 
-From the project root:
+From the `backend/` directory:
 
 ```bash
 PYTHONPATH=src python src/knowledge_discovery/main.py
@@ -316,7 +318,7 @@ Use Python 3.12 if needed.
 Make sure dependencies are installed:
 
 ```bash
-python -m pip install -r requirements.txt
+python -m pip install -e '.[dev]'
 ```
 
 ### Problem: `OPENROUTER_API_KEY` is missing
@@ -342,9 +344,10 @@ source .venv/bin/activate
 cd /home/reet/Projects/Multi-Agent-Researcher.worktrees/project-analysis-and-understanding
 uv venv --python 3.12 .venv
 source .venv/bin/activate
-uv pip install -r requirements.txt
-cp .env.example .env
+uv pip install -e 'backend[dev]'
+cp backend/.env.example backend/.env
 # edit .env with your OpenRouter and contact info
+cd backend
 PYTHONPATH=src python -m knowledge_discovery.preflight
 PYTHONPATH=src python src/knowledge_discovery/main.py "AI for Crop Disease Detection using Drones"
 ```
@@ -353,5 +356,34 @@ PYTHONPATH=src python src/knowledge_discovery/main.py "AI for Crop Disease Detec
 
 - Keep `.env` local and do not commit it.
 - `output/` is generated during runtime and may be safely ignored or cleaned as appropriate.
-- The app is a CLI-based research assistant; it is not a web application or database-backed API by default.
+- The backend exposes a FastAPI API for the frontend; generated files are stored under `backend/output/`.
 - To improve reproducibility, prefer using a supported Python version and a clean local venv for each environment.
+
+## 12) Run the complete application
+
+Use two terminals from the repository root. For Fish, configure Node without
+overwriting system directories:
+
+```fish
+fish_add_path /home/reet/.local/node-v22.14.0-linux-x64/bin
+```
+
+Backend terminal:
+
+```fish
+cd backend
+source ../.venv/bin/activate.fish
+set -x PYTHONPATH src
+uvicorn knowledge_discovery.api:app --reload --host 127.0.0.1 --port 8000
+```
+
+Frontend terminal:
+
+```fish
+cd frontend
+npm ci
+npm run dev -- --host 127.0.0.1 --port 5173
+```
+
+Open `http://127.0.0.1:5173/`. The frontend calls the backend at
+`http://localhost:8000` by default.
