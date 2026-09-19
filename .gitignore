@@ -1,43 +1,23 @@
-# Environment and secrets
+# Shared local environments and secrets
+.venv/
 .env
 .env.*
 !.env.example
-.venv/
-.venv311/
-venv/
-env/
-venv*/
-.venv*/
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.egg-info/
-*.pyo
-*.pyd
-*.pyc
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.pyre/
-.eggs/
-dist/
-build/
-site/
+# Backend generated and Python files
+backend/__pycache__/
+backend/**/*.py[cod]
+backend/*.egg-info/
+backend/.pytest_cache/
+backend/.mypy_cache/
+backend/output/
 
-# IDE/editor
-.idea/
+# Frontend dependencies and build output
+frontend/node_modules/
+frontend/dist/
+
+# IDE and OS files
 .vscode/
-*.swp
-*.swo
-*.code-workspace
-
-# Logs and generated outputs
-output/
-reports/
-*.log
-
-# OS
+.idea/
 .DS_Store
 Thumbs.db

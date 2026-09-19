@@ -1,0 +1,43 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+.venv/
+.venv311/
+venv/
+env/
+venv*/
+.venv*/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.pyo
+*.pyd
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.eggs/
+dist/
+build/
+site/
+
+# IDE/editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*.code-workspace
+
+# Logs and generated outputs
+output/
+reports/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db

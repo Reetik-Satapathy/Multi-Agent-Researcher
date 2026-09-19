@@ -2,6 +2,13 @@
 
 This repository is a Python-based multi-agent research system for literature discovery. It searches academic databases, analyzes novelty and research gaps, and generates a structured markdown research report.
 
+Run commands in this guide from the `backend/` directory:
+
+```bash
+cd backend
+source ../.venv/bin/activate
+```
+
 ## Project Summary
 
 What it does:
