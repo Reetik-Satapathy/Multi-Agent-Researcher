@@ -334,6 +334,11 @@ Open `http://127.0.0.1:5173/`. The web workflows call these API routes:
 
 Report generation can take several minutes because it runs the complete crew
 synchronously. PDF uploads create artifacts under `output/documents/<document_id>/`.
+The Compare Papers frontend requires exactly two uploaded PDFs; it does not
+pre-populate a comparison. Each upload slot can be replaced, shows processing
+progress, and must contain a successfully processed document before comparison
+can begin. Comparison follow-up questions use only the latest eight messages
+from that two-document chat.
 
 ## 11) Troubleshooting
 

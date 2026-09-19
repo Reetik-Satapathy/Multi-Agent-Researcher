@@ -76,6 +76,13 @@ earlier answers without sending the broader application conversation to the LLM.
 The PDF excerpts remain the source of truth, and answers are instructed to cite
 supporting pages.
 
+The Compare Papers page is intentionally upload-driven: it does not display a
+pre-existing paper comparison. Each of the two upload slots shows a green
+confirmation and the uploaded paper title after processing. A progress bar is
+shown while a PDF is uploaded and processed, and either slot can be replaced
+before comparison. The comparison button becomes available only after both
+documents are ready.
+
 The frontend-facing API routes are:
 
 ```text
@@ -87,6 +94,10 @@ POST /api/documents/{document_id}/questions
 POST /api/documents/compare
 POST /api/documents/compare/questions
 ```
+
+Comparison responses are normalized by the frontend so incomplete LLM output
+does not blank the page; unavailable sections are shown as empty or
+`Not specified` instead.
 
 ## Validate
 

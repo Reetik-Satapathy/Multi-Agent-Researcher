@@ -21,12 +21,29 @@ export interface DocumentComparisonResult {
 }
 
 export const documentService = {
-  async upload(file: File): Promise<DocumentUploadResult> {
+  async upload(file: File, onProgress?: (progress: number) => void): Promise<DocumentUploadResult> {
     const form = new FormData();
     form.append('file', file);
-    const response = await fetch(`${API_BASE_URL}/api/documents/upload`, { method: 'POST', body: form });
-    if (!response.ok) throw new Error(await response.text());
-    return response.json() as Promise<DocumentUploadResult>;
+    return new Promise((resolve, reject) => {
+      const request = new XMLHttpRequest();
+      request.open('POST', `${API_BASE_URL}/api/documents/upload`);
+      request.upload.onprogress = (event) => {
+        if (event.lengthComputable) onProgress?.(Math.round((event.loaded / event.total) * 100));
+      };
+      request.onerror = () => reject(new Error('PDF upload failed.'));
+      request.onload = () => {
+        if (request.status < 200 || request.status >= 300) {
+          reject(new Error(request.responseText || 'PDF upload failed.'));
+          return;
+        }
+        try {
+          resolve(JSON.parse(request.responseText) as DocumentUploadResult);
+        } catch {
+          reject(new Error('The backend returned an invalid PDF upload response.'));
+        }
+      };
+      request.send(form);
+    });
   },
 
   async ask(documentId: string, question: string, history: DocumentChatMessage[] = []): Promise<string> {
@@ -47,7 +64,19 @@ export const documentService = {
       body: JSON.stringify({ document_ids: documentIds }),
     });
     if (!response.ok) throw new Error(await response.text());
-    return response.json() as Promise<DocumentComparisonResult>;
+    const data = await response.json() as Partial<DocumentComparisonResult>;
+    const comparison: Partial<DocumentComparisonResult['comparison']> = data.comparison || {};
+    return {
+      document_ids: data.document_ids || documentIds,
+      documents: Array.isArray(data.documents) ? data.documents : [],
+      comparison: {
+        overview: typeof comparison.overview === 'string' ? comparison.overview : 'No comparison overview was returned.',
+        similarities: Array.isArray(comparison.similarities) ? comparison.similarities : [],
+        differences: Array.isArray(comparison.differences) ? comparison.differences : [],
+        research_gaps: Array.isArray(comparison.research_gaps) ? comparison.research_gaps : [],
+        comparison_table: Array.isArray(comparison.comparison_table) ? comparison.comparison_table : [],
+      },
+    };
   },
 
   async askComparison(

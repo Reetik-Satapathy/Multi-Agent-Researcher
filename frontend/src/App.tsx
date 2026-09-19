@@ -232,13 +232,7 @@ export function App() {
 
           {activeTab === 'compare' && (
             <PageContainer>
-              <CompareView
-                comparedPapers={comparedPapers}
-                allPapers={allPapers}
-                onRemoveCompare={handleCompareToggle}
-                onAddCompare={handleCompareToggle}
-                onGenerateReport={handleGenerateReportFromPapers}
-              />
+              <CompareView />
             </PageContainer>
           )}
 

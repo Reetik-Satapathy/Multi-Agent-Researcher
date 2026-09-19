@@ -1,40 +1,45 @@
 import { useState } from 'react';
-import { Send, Upload } from 'lucide-react';
+import { CheckCircle2, Send, Upload } from 'lucide-react';
 import type { DocumentMetadata } from '../types/research';
 import { documentService, type DocumentChatMessage, type DocumentComparisonResult } from '../services/documentService';
 
 export function PdfComparisonPanel() {
-  const [documents, setDocuments] = useState<DocumentMetadata[]>([]);
+  const [documents, setDocuments] = useState<Array<DocumentMetadata | null>>([null, null]);
   const [comparison, setComparison] = useState<DocumentComparisonResult | null>(null);
   const [messages, setMessages] = useState<DocumentChatMessage[]>([]);
   const [question, setQuestion] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
-  const upload = async (file: File) => {
+  const upload = async (file: File, slot: number) => {
     setBusy(true);
+    setUploadProgress(0);
     setError('');
     try {
-      const result = await documentService.upload(file);
-      setDocuments((current) => [
-        ...current.filter((item) => item.document_id !== result.metadata.document_id),
-        result.metadata,
-      ].slice(-2));
+      const result = await documentService.upload(file, setUploadProgress);
+      setDocuments((current) => {
+        const next = [...current];
+        next[slot] = result.metadata;
+        return next;
+      });
       setComparison(null);
       setMessages([]);
+      setUploadProgress(100);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'PDF upload failed.');
     } finally {
       setBusy(false);
+      setUploadProgress(null);
     }
   };
 
   const compare = async () => {
-    if (documents.length !== 2) return;
+    if (!documents[0] || !documents[1]) return;
     setBusy(true);
     setError('');
     try {
-      setComparison(await documentService.compare(documents.map((document) => document.document_id)));
+      setComparison(await documentService.compare(documents.map((document) => document!.document_id)));
       setMessages([]);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'PDF comparison failed.');
@@ -75,17 +80,32 @@ export function PdfComparisonPanel() {
       </div>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         {[0, 1].map((index) => (
-          <label key={index} className="flex cursor-pointer items-center gap-3 rounded-xl border-2 border-dashed border-[#1D4ED8]/30 bg-white p-4">
-            <Upload className="h-5 w-5 text-[#1D4ED8]" />
-            <span className="truncate text-xs font-semibold">{documents[index]?.title || `Choose PDF ${index + 1}`}</span>
+          <label key={index} className={`flex cursor-pointer items-center gap-3 rounded-xl border-2 border-dashed p-4 ${documents[index] ? 'border-emerald-500/60 bg-emerald-50' : 'border-[#1D4ED8]/30 bg-white'}`}>
+            {documents[index] ? <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" /> : <Upload className="h-5 w-5 shrink-0 text-[#1D4ED8]" />}
+            <span className="min-w-0 truncate text-xs font-semibold">
+              {documents[index] ? `Uploaded: ${documents[index]!.title || documents[index]!.filename}` : `Choose PDF ${index + 1}`}
+            </span>
+            {documents[index] && <span className="ml-auto shrink-0 text-[11px] font-medium text-emerald-700">Click to replace</span>}
             <input type="file" accept="application/pdf,.pdf" className="hidden" disabled={busy} onChange={(event) => {
               const file = event.target.files?.[0];
-              if (file) void upload(file);
+              if (file) void upload(file, index);
+              event.target.value = '';
             }} />
           </label>
         ))}
       </div>
-      {documents.length === 2 && (
+      {uploadProgress !== null && (
+        <div className="space-y-1" role="status" aria-live="polite">
+          <div className="flex justify-between text-xs text-[#6B6B67]">
+            <span>Uploading and processing PDF...</span>
+            <span>{uploadProgress}%</span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-[#D9D7D0]">
+            <div className="h-full rounded-full bg-[#1D4ED8] transition-[width] duration-200" style={{ width: `${uploadProgress}%` }} />
+          </div>
+        </div>
+      )}
+      {documents[0] && documents[1] && (
         <button type="button" onClick={() => void compare()} disabled={busy} className="rounded-xl bg-[#1D4ED8] px-4 py-2 text-xs font-semibold text-white disabled:opacity-50">
           {busy ? 'Analyzing PDFs...' : 'Compare Uploaded PDFs'}
         </button>
@@ -125,7 +145,7 @@ function ComparisonResult({ result, messages, question, setQuestion, ask, busy }
       <div className="overflow-x-auto rounded-xl border border-[#D9D7D0]">
         <table className="w-full min-w-[650px] text-left text-xs">
           <thead><tr className="border-b border-[#D9D7D0]"><th className="p-3">Metric</th>{result.documents.map((document) => <th key={document.document_id} className="p-3">{document.title || document.filename}</th>)}</tr></thead>
-          <tbody>{result.comparison.comparison_table.map((row) => <tr key={row.metric} className="border-b border-[#D9D7D0]"><td className="p-3 font-semibold">{row.metric}</td>{['Paper 1', 'Paper 2'].map((paper) => <td key={paper} className="p-3">{row.values[paper] || 'Not specified'}</td>)}</tr>)}</tbody>
+          <tbody>{result.comparison.comparison_table.map((row) => <tr key={row.metric} className="border-b border-[#D9D7D0]"><td className="p-3 font-semibold">{row.metric}</td>{['Paper 1', 'Paper 2'].map((paper) => <td key={paper} className="p-3">{row.values?.[paper] || 'Not specified'}</td>)}</tr>)}</tbody>
         </table>
       </div>
       <div className="rounded-xl border border-[#D9D7D0] p-4">
