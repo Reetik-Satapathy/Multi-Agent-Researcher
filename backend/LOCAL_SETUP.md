@@ -299,9 +299,41 @@ output/documents/<document_id>/
 The PDF must be a non-encrypted, text-based PDF no larger than 50 MB and 500 pages. Scanned
 image-only PDFs are detected and rejected because OCR is not configured in this first version.
 Question answers use page-aware lexical retrieval and the OpenRouter LLM, and are instructed to
-cite pages and avoid inventing information.
+cite pages and avoid inventing information. The web application keeps the latest eight
+user/assistant messages for the current uploaded document and sends those messages with each
+follow-up question. This is limited to the document chat and is not the broader user session;
+the retrieved PDF excerpts remain the evidence used to answer.
 
-## 10) Troubleshooting
+## 10) Run the frontend-backed API
+
+From the repository root, start the API in one terminal:
+
+```bash
+cd backend
+source ../.venv/bin/activate
+PYTHONPATH=src uvicorn knowledge_discovery.api:app --reload --host 127.0.0.1 --port 8000
+```
+
+Then start the React workspace in a second terminal:
+
+```bash
+cd frontend
+npm ci
+npm run dev -- --host 127.0.0.1 --port 5173
+```
+
+Open `http://127.0.0.1:5173/`. The web workflows call these API routes:
+
+- `GET /api/health` — backend health check
+- `POST /api/papers/search` — topic paper discovery
+- `POST /api/research/report` — synchronous full CrewAI report generation
+- `POST /api/documents/upload` — PDF extraction and summary
+- `POST /api/documents/{document_id}/questions` — grounded PDF question answering
+
+Report generation can take several minutes because it runs the complete crew
+synchronously. PDF uploads create artifacts under `output/documents/<document_id>/`.
+
+## 11) Troubleshooting
 
 ### Problem: ImportError or package issues
 
@@ -338,7 +370,7 @@ uv venv --python 3.12 .venv
 source .venv/bin/activate
 ```
 
-## 11) Typical Local Workflow
+## 12) Typical Local Workflow
 
 ```bash
 cd /home/reet/Projects/Multi-Agent-Researcher.worktrees/project-analysis-and-understanding
@@ -352,14 +384,14 @@ PYTHONPATH=src python -m knowledge_discovery.preflight
 PYTHONPATH=src python src/knowledge_discovery/main.py "AI for Crop Disease Detection using Drones"
 ```
 
-## 11) Notes for Contributors
+## 13) Notes for Contributors
 
 - Keep `.env` local and do not commit it.
 - `output/` is generated during runtime and may be safely ignored or cleaned as appropriate.
 - The backend exposes a FastAPI API for the frontend; generated files are stored under `backend/output/`.
 - To improve reproducibility, prefer using a supported Python version and a clean local venv for each environment.
 
-## 12) Run the complete application
+## 14) Run the complete application
 
 Use two terminals from the repository root. For Fish, configure Node without
 overwriting system directories:

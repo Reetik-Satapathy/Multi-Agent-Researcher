@@ -6,7 +6,7 @@ import json
 import os
 import tempfile
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -45,6 +45,12 @@ class ReportRequest(BaseModel):
 
 class QuestionRequest(BaseModel):
     question: str = Field(min_length=1, max_length=2000)
+    history: list["ChatMessage"] = Field(default_factory=list, max_length=8)
+
+
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=4000)
 
 
 @app.get("/api/health")
@@ -112,7 +118,11 @@ def ask_document(document_id: str, request: QuestionRequest) -> dict[str, str]:
     if not document_dir.is_dir():
         raise HTTPException(status_code=404, detail="Document not found.")
     try:
-        answer = answer_question(document_dir, request.question)
+        answer = answer_question(
+            document_dir,
+            request.question,
+            history=[message.model_dump() for message in request.history],
+        )
     except (OSError, ValueError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     return {"document_id": document_id, "question": request.question, "answer": answer}

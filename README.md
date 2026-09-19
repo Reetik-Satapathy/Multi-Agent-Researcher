@@ -57,6 +57,33 @@ npm run dev
 The frontend connects to `http://localhost:8000` by default. Set
 `VITE_API_BASE_URL` in `frontend/.env.local` to override it.
 
+## Available workflows
+
+The frontend currently supports three backend-powered workflows:
+
+- **Discover papers** — search verified scholarly records for a topic and display
+  the results in the workspace.
+- **Generate a report** — run the complete sequential CrewAI workflow and render
+  the generated report in the report workspace.
+- **Ask a PDF** — upload a selectable-text research paper, receive an LLM-generated
+  summary, and ask grounded questions about the paper.
+
+The PDF chat sends only the latest eight user/assistant messages from the current
+document conversation with each question. This lets follow-up questions refer to
+earlier answers without sending the broader application conversation to the LLM.
+The PDF excerpts remain the source of truth, and answers are instructed to cite
+supporting pages.
+
+The frontend-facing API routes are:
+
+```text
+GET  /api/health
+POST /api/papers/search
+POST /api/research/report
+POST /api/documents/upload
+POST /api/documents/{document_id}/questions
+```
+
 ## Validate
 
 ```bash

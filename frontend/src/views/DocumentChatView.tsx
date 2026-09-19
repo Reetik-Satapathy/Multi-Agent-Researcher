@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { FileText, Send, Upload } from 'lucide-react';
 import type { DocumentMetadata, DocumentUploadResult } from '../types/research';
-import { documentService } from '../services/documentService';
+import { documentService, type DocumentChatMessage } from '../services/documentService';
 
 export function DocumentChatView() {
   const [document, setDocument] = useState<DocumentUploadResult | null>(null);
   const [question, setQuestion] = useState('');
-  const [answer, setAnswer] = useState('');
+  const [messages, setMessages] = useState<DocumentChatMessage[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -15,7 +15,7 @@ export function DocumentChatView() {
     setError('');
     try {
       setDocument(await documentService.upload(file));
-      setAnswer('');
+      setMessages([]);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'PDF upload failed.');
     } finally {
@@ -28,7 +28,17 @@ export function DocumentChatView() {
     setBusy(true);
     setError('');
     try {
-      setAnswer(await documentService.ask(document.metadata.document_id, question.trim()));
+      const currentQuestion = question.trim();
+      const answer = await documentService.ask(
+        document.metadata.document_id,
+        currentQuestion,
+        messages,
+      );
+      setMessages((current): DocumentChatMessage[] => [
+        ...current,
+        { role: 'user' as const, content: currentQuestion },
+        { role: 'assistant' as const, content: answer },
+      ].slice(-8));
       setQuestion('');
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Question failed.');
@@ -53,15 +63,15 @@ export function DocumentChatView() {
         }} />
       </label>
       {error && <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-      {document && <DocumentPanel metadata={document.metadata} summary={document.summary} answer={answer} question={question} setQuestion={setQuestion} ask={ask} busy={busy} />}
+      {document && <DocumentPanel metadata={document.metadata} summary={document.summary} messages={messages} question={question} setQuestion={setQuestion} ask={ask} busy={busy} />}
     </div>
   );
 }
 
-function DocumentPanel({ metadata, summary, answer, question, setQuestion, ask, busy }: {
+function DocumentPanel({ metadata, summary, messages, question, setQuestion, ask, busy }: {
   metadata: DocumentMetadata;
   summary: Record<string, unknown>;
-  answer: string;
+  messages: DocumentChatMessage[];
   question: string;
   setQuestion: (value: string) => void;
   ask: () => void;
@@ -77,7 +87,13 @@ function DocumentPanel({ metadata, summary, answer, question, setQuestion, ask, 
         <input value={question} onChange={(event) => setQuestion(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void ask(); }} placeholder="Ask a question about the paper..." className="min-w-0 flex-1 rounded-xl border border-[#D9D7D0] bg-white px-4 py-2.5 text-sm outline-none focus:border-[#1D4ED8]" />
         <button type="button" onClick={() => void ask()} disabled={busy || !question.trim()} className="rounded-xl bg-[#1D4ED8] px-4 text-white disabled:opacity-40"><Send className="h-4 w-4" /></button>
       </div>
-      {answer && <div className="mt-4 rounded-xl bg-[#DBEAFE]/60 p-4 text-sm leading-relaxed whitespace-pre-wrap">{answer}</div>}
+      {messages.length > 0 && <div className="mt-4 space-y-3">
+        {messages.map((message, index) => (
+          <div key={`${message.role}-${index}`} className={`rounded-xl p-4 text-sm leading-relaxed whitespace-pre-wrap ${message.role === 'user' ? 'bg-white border border-[#D9D7D0]' : 'bg-[#DBEAFE]/60'}`}>
+            {message.content}
+          </div>
+        ))}
+      </div>}
     </div>
   </div>;
 }

@@ -2,6 +2,11 @@ import type { DocumentUploadResult } from '../types/research';
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
 
+export interface DocumentChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export const documentService = {
   async upload(file: File): Promise<DocumentUploadResult> {
     const form = new FormData();
@@ -11,11 +16,11 @@ export const documentService = {
     return response.json() as Promise<DocumentUploadResult>;
   },
 
-  async ask(documentId: string, question: string): Promise<string> {
+  async ask(documentId: string, question: string, history: DocumentChatMessage[] = []): Promise<string> {
     const response = await fetch(`${API_BASE_URL}/api/documents/${encodeURIComponent(documentId)}/questions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question }),
+      body: JSON.stringify({ question, history: history.slice(-8) }),
     });
     if (!response.ok) throw new Error(await response.text());
     const data = await response.json() as { answer: string };
