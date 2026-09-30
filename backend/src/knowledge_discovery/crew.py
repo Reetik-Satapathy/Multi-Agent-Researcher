@@ -44,6 +44,7 @@ class KnowledgeDiscoveryCrew:
             config=AGENTS_CONFIG["paper_search_agent"],
             tools=[PaperSearchTool(), QueryExpanderTool(), PaperSummarizerTool()],
             llm=get_llm(),
+            max_iter=5,
             verbose=True,
         )
 
@@ -54,6 +55,7 @@ class KnowledgeDiscoveryCrew:
             config=AGENTS_CONFIG["research_analysis_agent"],
             tools=[NoveltyAnalysisTool(), SemanticRerankerTool(), LLMNoveltyScorerTool()],
             llm=get_llm(),
+            max_iter=5,
             verbose=True,
         )
 
@@ -61,8 +63,8 @@ class KnowledgeDiscoveryCrew:
     def report_agent(self) -> Agent:
         return Agent(
             config=AGENTS_CONFIG["report_agent"],
-            tools=[PaperSummarizerTool()],
             llm=get_llm(),
+            max_iter=4,
             verbose=True,
         )
 

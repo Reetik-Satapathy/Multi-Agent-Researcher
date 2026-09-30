@@ -57,18 +57,31 @@ npm run dev
 The frontend connects to `http://localhost:8000` by default. Set
 `VITE_API_BASE_URL` in `frontend/.env.local` to override it.
 
+Google sign-in is optional. To enable it, configure the OAuth credentials and
+callback URL described in [backend/LOCAL_SETUP.md](./backend/LOCAL_SETUP.md).
+Users can defer sign-in and access it later from the sidebar profile control.
+
 ## Available workflows
 
-The frontend currently supports three backend-powered workflows:
+The frontend currently supports these workflows:
 
 - **Discover papers** — search verified scholarly records for a topic and display
-  the results in the workspace.
-- **Generate a report** — run the complete sequential CrewAI workflow and render
-  the generated report in the report workspace.
+  results in the workspace. Searches query Crossref, OpenAlex, and Semantic Scholar
+  concurrently, retain partial results when a provider is unavailable, and let users
+  choose 10, 15, 20, or 25 papers. Results can be filtered by year, sorted, bookmarked,
+  and cleared to start over.
+- **Generate a report** — use parallel scholarly search, deterministic research
+  analysis, and one report-writing LLM call. The report retains the required ten-section
+  Markdown structure and can be reopened from the Reports page.
 - **Ask a PDF** — upload a selectable-text research paper, receive an LLM-generated
-  summary, and ask grounded questions about the paper.
+  summary, and ask grounded questions about the paper. The document, summary, and chat
+  can be cleared when starting a new document.
 - **Compare PDFs** — upload two papers, generate a structured comparison, and ask
-  follow-up questions grounded in both documents.
+  follow-up questions grounded in both documents. Uploaded documents, comparison, and
+  chat can be cleared together.
+
+The workspace contains Projects, Saved Papers, and Reports. Research History and the
+Dashboard are not part of the current interface.
 
 The PDF chat sends only the latest eight user/assistant messages from the current
 document conversation with each question. This lets follow-up questions refer to
@@ -82,6 +95,15 @@ confirmation and the uploaded paper title after processing. A progress bar is
 shown while a PDF is uploaded and processed, and either slot can be replaced
 before comparison. The comparison button becomes available only after both
 documents are ready.
+
+Completed paper searches, uploaded-PDF summaries and chat, two-paper comparisons
+and chat, generated reports, and report drafts are saved in the browser's local
+storage. They remain available when navigating away and returning, or after
+reloading in the same browser profile. This data is browser-local and is not
+synced across browsers or devices; clearing site data removes the saved frontend
+state. The report topic draft and bookmarked papers are also retained. Saved
+papers appear under **Saved Papers** in the sidebar. Uploaded PDF files
+themselves are not stored in browser local storage.
 
 The frontend-facing API routes are:
 

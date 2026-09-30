@@ -1,26 +1,37 @@
 import { useState } from 'react';
-import { FileText, Send, Upload } from 'lucide-react';
+import { FileText, Send, Trash2, Upload } from 'lucide-react';
 import type { DocumentMetadata, DocumentUploadResult } from '../types/research';
-import { documentService, type DocumentChatMessage } from '../services/documentService';
+import { documentService, type DocumentChatMessage, type DocumentUploadProgress } from '../services/documentService';
+import { useLocalStorageState } from '../hooks/useLocalStorageState';
 
 export function DocumentChatView() {
-  const [document, setDocument] = useState<DocumentUploadResult | null>(null);
+  const [document, setDocument] = useLocalStorageState<DocumentUploadResult | null>('document-chat-document-v1', null);
   const [question, setQuestion] = useState('');
-  const [messages, setMessages] = useState<DocumentChatMessage[]>([]);
+  const [messages, setMessages] = useLocalStorageState<DocumentChatMessage[]>('document-chat-messages-v1', []);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [uploadProgress, setUploadProgress] = useState<DocumentUploadProgress | null>(null);
 
   const upload = async (file: File) => {
     setBusy(true);
+    setUploadProgress({ loaded: 0, total: file.size, percentage: 0 });
     setError('');
     try {
-      setDocument(await documentService.upload(file));
+      setDocument(await documentService.upload(file, setUploadProgress));
       setMessages([]);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'PDF upload failed.');
     } finally {
       setBusy(false);
+      setUploadProgress(null);
     }
+  };
+
+  const clearWorkspace = () => {
+    setDocument(null);
+    setMessages([]);
+    setQuestion('');
+    setError('');
   };
 
   const ask = async () => {
@@ -50,18 +61,54 @@ export function DocumentChatView() {
   return (
     <div className="mx-auto max-w-4xl space-y-6 pb-12">
       <div>
-        <h2 className="text-2xl font-extrabold tracking-tight">Ask a research paper</h2>
-        <p className="mt-1 text-xs text-[#6B6B67]">Upload a selectable-text PDF to extract, summarize, and question it.</p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-2xl font-extrabold tracking-tight">Ask a research paper</h2>
+            <p className="mt-1 text-xs text-[#6B6B67]">Upload a selectable-text PDF to extract, summarize, and question it.</p>
+          </div>
+          <button
+            type="button"
+            onClick={clearWorkspace}
+            disabled={busy || (!document && messages.length === 0 && !question && !error)}
+            className="flex items-center gap-2 rounded-lg border border-[#D9D7D0] px-3 py-2 text-xs font-semibold text-[#6B6B67] transition-colors hover:border-red-300 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            <span>Clear</span>
+          </button>
+        </div>
       </div>
       <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#1D4ED8]/40 bg-white p-10 text-center">
         <Upload className="h-6 w-6 text-[#1D4ED8]" />
-        <span className="text-sm font-semibold">{busy ? 'Processing PDF...' : 'Choose a PDF paper'}</span>
+        <span className="text-sm font-semibold">{busy ? 'Uploading and processing PDF...' : 'Choose a PDF paper'}</span>
         <span className="text-xs text-[#6B6B67]">Maximum 50 MB; OCR is not configured</span>
         <input type="file" accept="application/pdf,.pdf" className="hidden" disabled={busy} onChange={(event) => {
           const file = event.target.files?.[0];
           if (file) void upload(file);
+          event.target.value = '';
         }} />
       </label>
+      {uploadProgress !== null && (
+        <div className="space-y-1" role="status" aria-live="polite">
+          <div className="flex justify-between text-xs text-[#6B6B67]">
+            <span>
+              {uploadProgress.percentage >= 100 ? 'Upload complete; processing PDF...' : 'Uploading PDF...'}
+            </span>
+            <span>
+              {(uploadProgress.loaded / 1024 / 1024).toFixed(1)} / {(uploadProgress.total / 1024 / 1024).toFixed(1)} MB · {uploadProgress.percentage}%
+            </span>
+          </div>
+          <div
+            className="h-2 overflow-hidden rounded-full bg-[#D9D7D0]"
+            role="progressbar"
+            aria-label="PDF upload progress"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={uploadProgress.percentage}
+          >
+            <div className="h-full rounded-full bg-[#1D4ED8] transition-[width] duration-300" style={{ width: `${uploadProgress.percentage}%` }} />
+          </div>
+        </div>
+      )}
       {error && <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
       {document && <DocumentPanel metadata={document.metadata} summary={document.summary} messages={messages} question={question} setQuestion={setQuestion} ask={ask} busy={busy} />}
     </div>

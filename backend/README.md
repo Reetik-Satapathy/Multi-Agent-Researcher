@@ -14,7 +14,14 @@ A multi-agent AI research system that helps researchers, students, and innovator
 ## Architecture
 
 ```
-User → CrewAI Orchestrator (OpenRouter LLM)
+FastAPI report endpoint
+         ├── Parallel paper search tool → Crossref / OpenAlex / Semantic Scholar
+         ├── Deterministic novelty and gap analysis
+         └── Single OpenRouter report-writing call
+                    ↓
+           Final Research Report (output/research_report.md)
+
+CLI workflow → CrewAI Orchestrator (OpenRouter LLM)
          ├── Paper Search Agent       → paper_search tool       → Crossref / OpenAlex / Semantic Scholar
          ├── Research Analysis Agent  → novelty_analysis tool
          └── Report Agent
@@ -22,7 +29,10 @@ User → CrewAI Orchestrator (OpenRouter LLM)
            Final Research Report (output/research_report.md)
 ```
 
-Agents never call APIs directly — all external services are accessed through the tool layer.
+The browser-facing report endpoint uses a direct, single-writer pipeline to avoid
+unnecessary agent/tool round trips; it shares the CrewAI workflow's search tools,
+analysis logic, and report instructions. The CLI remains available for the full
+sequential CrewAI workflow. External scholarly APIs are accessed through the tool layer.
 
 ## Project layout
 

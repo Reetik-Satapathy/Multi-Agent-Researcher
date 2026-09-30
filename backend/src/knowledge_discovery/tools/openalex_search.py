@@ -19,6 +19,8 @@ def search_openalex(query: str, limit: int = 10) -> list[Paper]:
             "sort": "relevance_score:desc",
         },
         headers=openalex_headers(),
+        timeout=(4, 8),
+        search=True,
     )
 
     papers: list[Paper] = []

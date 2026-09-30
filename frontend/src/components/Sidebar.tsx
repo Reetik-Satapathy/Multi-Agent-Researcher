@@ -1,22 +1,19 @@
 import {
   Bookmark,
-  Clock,
   FileText,
   FolderKanban,
   GitCompare,
-  Home,
   Library,
   Search,
   Settings,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import type { UserProfile as UserProfileData } from '../types/research';
 import { UserProfile } from './UserProfile';
 import { cn } from '../lib/cn';
+import type { GoogleUser } from '../services/authService';
 
 export type ActiveTab =
-  | 'dashboard'
   | 'discover'
   | 'my-research'
   | 'compare'
@@ -28,7 +25,6 @@ export type ActiveTab =
   | 'settings'
   | 'projects'
   | 'saved'
-  | 'history'
   | 'document-chat';
 
 interface SidebarProps {
@@ -36,13 +32,15 @@ interface SidebarProps {
   setActiveTab: (tab: ActiveTab) => void;
   collapsed: boolean;
   setCollapsed: (collapsed: boolean) => void;
-  user: UserProfileData;
+  user: GoogleUser | null;
+  googleEnabled: boolean;
+  onSignIn: () => void;
+  onSignOut: () => void;
   mobileOpen?: boolean;
   onMobileClose?: () => void;
 }
 
-const MAIN_NAV: Array<{ id: ActiveTab; label: string; icon: typeof Home }> = [
-  { id: 'dashboard', label: 'Dashboard', icon: Home },
+const MAIN_NAV: Array<{ id: ActiveTab; label: string; icon: typeof Search }> = [
   { id: 'discover', label: 'Discover Papers', icon: Search },
   { id: 'my-research', label: 'My Research', icon: Library },
   { id: 'compare', label: 'Compare Papers', icon: GitCompare },
@@ -53,7 +51,6 @@ const MAIN_NAV: Array<{ id: ActiveTab; label: string; icon: typeof Home }> = [
 const WORKSPACE_NAV: Array<{ id: ActiveTab; label: string; icon: typeof FolderKanban }> = [
   { id: 'projects', label: 'Projects', icon: FolderKanban },
   { id: 'saved', label: 'Saved Papers', icon: Bookmark },
-  { id: 'history', label: 'Recent Research', icon: Clock },
 ];
 
 export function Sidebar({
@@ -62,6 +59,9 @@ export function Sidebar({
   collapsed,
   setCollapsed,
   user,
+  googleEnabled,
+  onSignIn,
+  onSignOut,
   mobileOpen = false,
   onMobileClose,
 }: SidebarProps) {
@@ -72,7 +72,7 @@ export function Sidebar({
     onMobileClose?.();
   };
 
-  const navButton = (id: ActiveTab, label: string, Icon: typeof Home) => {
+  const navButton = (id: ActiveTab, label: string, Icon: typeof Search) => {
     const active = isActive(id);
     return (
       <button
@@ -161,7 +161,13 @@ export function Sidebar({
 
         <div className={cn('space-y-2.5 border-t border-white/[0.06] px-3 pb-4 pt-3.5', collapsed && 'px-2')}>
           {navButton('settings', 'Settings', Settings)}
-          <UserProfile user={user} collapsed={collapsed} onOpenProfile={() => go('profile')} />
+          <UserProfile
+            user={user}
+            googleEnabled={googleEnabled}
+            collapsed={collapsed}
+            onSignIn={onSignIn}
+            onSignOut={onSignOut}
+          />
         </div>
       </aside>
     </>

@@ -20,6 +20,8 @@ def search_crossref(query: str, limit: int = 10) -> list[Paper]:
             "select": "DOI,title,author,published-print,published-online,abstract,is-referenced-by-count,type,container-title,publisher",
         },
         headers=crossref_headers(),
+        timeout=(4, 8),
+        search=True,
     )
 
     papers: list[Paper] = []

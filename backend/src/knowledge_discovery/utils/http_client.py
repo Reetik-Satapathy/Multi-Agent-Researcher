@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import logging
+import threading
 from typing import Any
 
 import requests
@@ -20,19 +21,40 @@ _DEFAULT_RETRY = Retry(
     status_forcelist=(429, 500, 502, 503, 504),
     allowed_methods=("GET", "POST"),
 )
+_SEARCH_RETRY = Retry(
+    total=1,
+    connect=1,
+    read=1,
+    status=1,
+    backoff_factor=0.2,
+    status_forcelist=(500, 502, 503, 504),
+    allowed_methods=frozenset({"GET"}),
+    respect_retry_after_header=False,
+)
 
-_session: requests.Session | None = None
+_thread_local = threading.local()
 
 
 def get_session() -> requests.Session:
-    global _session
-    if _session is None:
+    session = getattr(_thread_local, "session", None)
+    if session is None:
         session = requests.Session()
         adapter = HTTPAdapter(max_retries=_DEFAULT_RETRY)
         session.mount("https://", adapter)
         session.mount("http://", adapter)
-        _session = session
-    return _session
+        _thread_local.session = session
+    return session
+
+
+def get_search_session() -> requests.Session:
+    session = getattr(_thread_local, "search_session", None)
+    if session is None:
+        session = requests.Session()
+        adapter = HTTPAdapter(max_retries=_SEARCH_RETRY)
+        session.mount("https://", adapter)
+        session.mount("http://", adapter)
+        _thread_local.search_session = session
+    return session
 
 
 def get_text(
@@ -55,13 +77,14 @@ def get_json(
     *,
     params: dict[str, Any] | None = None,
     headers: dict[str, str] | None = None,
-    timeout: int = 30,
+    timeout: int | tuple[int, int] = 30,
+    search: bool = False,
 ) -> dict[str, Any]:
     """GET and decode JSON with retries/backoff.
 
     Uses a shared requests.Session configured with urllib3 Retry.
     """
-    session = get_session()
+    session = get_search_session() if search else get_session()
     logger.debug("GET json %s params=%s headers=%s", url, params, headers)
     response = session.get(url, params=params, headers=headers, timeout=timeout)
     response.raise_for_status()

@@ -19,8 +19,6 @@ export function TopBar({ activeTab, setActiveTab, savedCount, onOpenMobileNav }:
         return 'Projects';
       case 'saved':
         return 'Saved Papers';
-      case 'history':
-        return 'Recent Research';
       case 'compare':
         return 'Compare Papers';
       case 'reports':

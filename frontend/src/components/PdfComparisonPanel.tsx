@@ -1,20 +1,29 @@
 import { useState } from 'react';
-import { CheckCircle2, Send, Upload } from 'lucide-react';
+import { CheckCircle2, Send, Trash2, Upload } from 'lucide-react';
 import type { DocumentMetadata } from '../types/research';
-import { documentService, type DocumentChatMessage, type DocumentComparisonResult } from '../services/documentService';
+import { documentService, type DocumentChatMessage, type DocumentComparisonResult, type DocumentUploadProgress } from '../services/documentService';
+import { useLocalStorageState } from '../hooks/useLocalStorageState';
 
 export function PdfComparisonPanel() {
-  const [documents, setDocuments] = useState<Array<DocumentMetadata | null>>([null, null]);
-  const [comparison, setComparison] = useState<DocumentComparisonResult | null>(null);
-  const [messages, setMessages] = useState<DocumentChatMessage[]>([]);
+  const [documents, setDocuments] = useLocalStorageState<Array<DocumentMetadata | null>>('pdf-comparison-documents-v1', [null, null]);
+  const [comparison, setComparison] = useLocalStorageState<DocumentComparisonResult | null>('pdf-comparison-result-v1', null);
+  const [messages, setMessages] = useLocalStorageState<DocumentChatMessage[]>('pdf-comparison-messages-v1', []);
   const [question, setQuestion] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<DocumentUploadProgress | null>(null);
+
+  const clearWorkspace = () => {
+    setDocuments([null, null]);
+    setComparison(null);
+    setMessages([]);
+    setQuestion('');
+    setError('');
+  };
 
   const upload = async (file: File, slot: number) => {
     setBusy(true);
-    setUploadProgress(0);
+    setUploadProgress({ loaded: 0, total: file.size, percentage: 0 });
     setError('');
     try {
       const result = await documentService.upload(file, setUploadProgress);
@@ -25,7 +34,6 @@ export function PdfComparisonPanel() {
       });
       setComparison(null);
       setMessages([]);
-      setUploadProgress(100);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'PDF upload failed.');
     } finally {
@@ -74,9 +82,20 @@ export function PdfComparisonPanel() {
 
   return (
     <div className="glass-panel rounded-2xl p-5 space-y-4 border border-[#1D4ED8]/30">
-      <div>
-        <h3 className="text-base font-bold">Compare two research PDFs</h3>
-        <p className="mt-1 text-xs text-[#6B6B67]">Upload exactly two papers for an evidence-grounded comparison and follow-up chat.</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-base font-bold">Compare two research PDFs</h3>
+          <p className="mt-1 text-xs text-[#6B6B67]">Upload exactly two papers for an evidence-grounded comparison and follow-up chat.</p>
+        </div>
+        <button
+          type="button"
+          onClick={clearWorkspace}
+          disabled={busy || (!documents.some(Boolean) && !comparison && messages.length === 0 && !question && !error)}
+          className="flex items-center gap-2 rounded-lg border border-[#D9D7D0] px-3 py-2 text-xs font-semibold text-[#6B6B67] transition-colors hover:border-red-300 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+          <span>Clear</span>
+        </button>
       </div>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         {[0, 1].map((index) => (
@@ -97,11 +116,22 @@ export function PdfComparisonPanel() {
       {uploadProgress !== null && (
         <div className="space-y-1" role="status" aria-live="polite">
           <div className="flex justify-between text-xs text-[#6B6B67]">
-            <span>Uploading and processing PDF...</span>
-            <span>{uploadProgress}%</span>
+            <span>
+              {uploadProgress.percentage >= 100 ? 'Upload complete; processing PDF...' : 'Uploading PDF...'}
+            </span>
+            <span>
+              {(uploadProgress.loaded / 1024 / 1024).toFixed(1)} / {(uploadProgress.total / 1024 / 1024).toFixed(1)} MB · {uploadProgress.percentage}%
+            </span>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-[#D9D7D0]">
-            <div className="h-full rounded-full bg-[#1D4ED8] transition-[width] duration-200" style={{ width: `${uploadProgress}%` }} />
+          <div
+            className="h-2 overflow-hidden rounded-full bg-[#D9D7D0]"
+            role="progressbar"
+            aria-label="PDF upload progress"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={uploadProgress.percentage}
+          >
+            <div className="h-full rounded-full bg-[#1D4ED8] transition-[width] duration-300" style={{ width: `${uploadProgress.percentage}%` }} />
           </div>
         </div>
       )}

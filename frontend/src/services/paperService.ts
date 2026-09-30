@@ -18,7 +18,7 @@ export const paperService = {
     const response = await fetch(`${API_BASE_URL}/api/papers/search`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ topic: filters.query || 'research', count: filters.count || 30 }),
+      body: JSON.stringify({ topic: filters.query || 'research', count: filters.count ?? 20 }),
     });
     if (!response.ok) throw new Error(await response.text());
     const data = await response.json() as { papers: Array<Record<string, unknown>> };

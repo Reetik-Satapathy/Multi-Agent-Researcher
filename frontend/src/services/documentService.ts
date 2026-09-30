@@ -20,15 +20,30 @@ export interface DocumentComparisonResult {
   };
 }
 
+export interface DocumentUploadProgress {
+  loaded: number;
+  total: number;
+  percentage: number;
+}
+
 export const documentService = {
-  async upload(file: File, onProgress?: (progress: number) => void): Promise<DocumentUploadResult> {
+  async upload(
+    file: File,
+    onProgress?: (progress: DocumentUploadProgress) => void,
+  ): Promise<DocumentUploadResult> {
     const form = new FormData();
     form.append('file', file);
     return new Promise((resolve, reject) => {
       const request = new XMLHttpRequest();
       request.open('POST', `${API_BASE_URL}/api/documents/upload`);
       request.upload.onprogress = (event) => {
-        if (event.lengthComputable) onProgress?.(Math.round((event.loaded / event.total) * 100));
+        if (event.lengthComputable) {
+          onProgress?.({
+            loaded: event.loaded,
+            total: event.total,
+            percentage: Math.round((event.loaded / event.total) * 100),
+          });
+        }
       };
       request.onerror = () => reject(new Error('PDF upload failed.'));
       request.onload = () => {

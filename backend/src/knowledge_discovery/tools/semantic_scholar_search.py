@@ -28,6 +28,8 @@ def search_semantic_scholar(query: str, limit: int = 10) -> list[Paper]:
             "fields": SEARCH_FIELDS,
         },
         headers=semantic_scholar_headers(),
+        timeout=(4, 8),
+        search=True,
     )
     return [_parse_paper(item) for item in data.get("data", [])]
 

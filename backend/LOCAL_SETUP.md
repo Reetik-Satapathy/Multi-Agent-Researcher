@@ -105,6 +105,12 @@ CROSSREF_MAILTO=your_email@example.com
 OPENALEX_MAILTO=your_email@example.com
 SEMANTIC_SCHOLAR_API_KEY=your_semantic_scholar_api_key
 CREWAI_TELEMETRY_OPT_OUT=true
+GOOGLE_CLIENT_ID=your_google_oauth_client_id
+GOOGLE_CLIENT_SECRET=your_google_oauth_client_secret
+GOOGLE_REDIRECT_URI=http://localhost:8000/api/auth/google/callback
+SESSION_SECRET_KEY=replace_with_output_from_openssl_rand_hex_32
+SESSION_COOKIE_SECURE=false
+CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 ```
 
 Notes:
@@ -112,6 +118,8 @@ Notes:
 - `OPENROUTER_MODEL` is optional, but recommended.
 - `CROSSREF_MAILTO` and `OPENALEX_MAILTO` help with polite API usage and are optional but recommended.
 - `SEMANTIC_SCHOLAR_API_KEY` enables Semantic Scholar discovery and citation metadata.
+- Google login is optional. To enable it, configure the Google OAuth consent screen, create an OAuth 2.0 Client ID for a Web application, add `http://localhost:5173` as an authorized JavaScript origin, and add `http://localhost:8000/api/auth/google/callback` as an authorized redirect URI. Set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `SESSION_SECRET_KEY` in the backend environment. Ensure `CORS_ORIGINS` contains the frontend origin and that `VITE_API_BASE_URL` points to the backend host used by `GOOGLE_REDIRECT_URI`. For local development, use `localhost` consistently; the login flow normalizes `127.0.0.1` to match the configured backend host.
+- Generate a persistent session signing key with `openssl rand -hex 32`. Set `SESSION_COOKIE_SECURE=true` when using HTTPS. Login remains optional; users can defer the initial prompt and sign in later from the sidebar profile area.
 - `.env` is local-only and should not be committed to Git.
 
 ## 5) Validate the setup
@@ -154,7 +162,7 @@ PYTHONPATH=src python src/knowledge_discovery/main.py "Graph Neural Networks for
 
 ### Run the full CrewAI workflow
 
-The full crew runs three sequential agents:
+The CLI runs the full crew with three sequential agents:
 
 1. **Paper Search Agent** — expands the topic and searches Crossref, OpenAlex, and Semantic
    Scholar for verified papers.
@@ -326,19 +334,38 @@ Open `http://127.0.0.1:5173/`. The web workflows call these API routes:
 
 - `GET /api/health` — backend health check
 - `POST /api/papers/search` — topic paper discovery
-- `POST /api/research/report` — synchronous full CrewAI report generation
+- `POST /api/research/report` — optimized report generation (parallel scholarly search and deterministic analysis, followed by one LLM writing call)
+- `GET /api/auth/me` — current Google sign-in state
+- `GET /api/auth/google/login` and `GET /api/auth/google/callback` — Google OpenID Connect flow
+- `POST /api/auth/logout` — clear the signed-in session
 - `POST /api/documents/upload` — PDF extraction and summary
 - `POST /api/documents/{document_id}/questions` — grounded PDF question answering
 - `POST /api/documents/compare` — structured comparison of two uploaded PDFs
 - `POST /api/documents/compare/questions` — context-aware questions across both PDFs
 
-Report generation can take several minutes because it runs the complete crew
-synchronously. PDF uploads create artifacts under `output/documents/<document_id>/`.
+The browser report endpoint avoids redundant sequential agent turns while preserving
+the ten required report sections and detailed report instructions. The full sequential
+CrewAI workflow remains available from the CLI, as described above. Paper discovery
+searches providers concurrently, returns available verified results when a provider
+is rate-limited or fails, and supports requested result counts of 10, 15, 20, and 25.
+The UI reports when fewer results are available than requested. PDF uploads create
+artifacts under `output/documents/<document_id>/`.
 The Compare Papers frontend requires exactly two uploaded PDFs; it does not
 pre-populate a comparison. Each upload slot can be replaced, shows processing
 progress, and must contain a successfully processed document before comparison
 can begin. Comparison follow-up questions use only the latest eight messages
 from that two-document chat.
+
+The frontend saves completed discovery results, uploaded-document summaries and
+chat, PDF comparisons and chat, generated reports, and report drafts in browser
+local storage. They persist across navigation and reloads within the same browser
+profile, but are not synchronized to other browsers/devices. Clearing browser site
+data removes this saved UI state. Raw uploaded PDF files are not stored in browser
+local storage; the backend keeps extracted document artifacts under `output/documents/`.
+The report topic draft and bookmarked paper list are also retained locally;
+bookmarked papers are available from the Saved Papers sidebar section.
+The workspace sidebar includes Projects and Saved Papers; research history has been
+removed from the workspace UI.
 
 ## 11) Troubleshooting
 

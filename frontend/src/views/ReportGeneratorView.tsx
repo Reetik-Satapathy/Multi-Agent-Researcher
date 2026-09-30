@@ -1,232 +1,112 @@
-import React, { useState } from 'react';
-import { 
-  Sparkles, 
-  Check, 
-  Layers, 
-  Settings2, 
-  BookMarked,
-  ArrowRight
-} from 'lucide-react';
+import { useState, type FormEvent } from 'react';
+import { ArrowRight, FileText, Sparkles } from 'lucide-react';
 import { LoadingState } from '../components/LoadingState';
-import type { Paper, ResearchReport } from '../types/research';
+import type { ResearchReport } from '../types/research';
 import { aiService } from '../services/aiService';
+import { useLocalStorageState } from '../hooks/useLocalStorageState';
 
 interface ReportGeneratorViewProps {
-  initialSourcePapers: Paper[];
-  allPapers: Paper[];
+  reports: ResearchReport[];
   onReportGenerated: (report: ResearchReport) => void;
+  onOpenReport: (report: ResearchReport) => void;
 }
 
-export const ReportGeneratorView: React.FC<ReportGeneratorViewProps> = ({
-  initialSourcePapers,
-  allPapers,
-  onReportGenerated
-}) => {
-  const [title, setTitle] = useState('');
-  const [topic, setTopic] = useState('');
-  const [reportType, setReportType] = useState<'Literature Review' | 'Research Summary' | 'Comparative Analysis' | 'Academic Report' | 'Custom'>('Literature Review');
-  const [selectedPaperIds, setSelectedPaperIds] = useState<string[]>(
-    initialSourcePapers.length > 0 ? initialSourcePapers.map((p) => p.id) : [allPapers[0]?.id].filter(Boolean)
-  );
-
-  const availableSections = [
-    'Introduction',
-    'Paper Overview',
-    'Methodology',
-    'Findings',
-    'Discussion',
-    'Limitations',
-    'Conclusion',
-    'References'
-  ];
-
-  const [selectedSections, setSelectedSections] = useState<string[]>([...availableSections]);
+export function ReportGeneratorView({ reports, onReportGenerated, onOpenReport }: ReportGeneratorViewProps) {
+  const [topic, setTopic] = useLocalStorageState('report-generator-topic-v1', '');
   const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState('');
 
-  const togglePaper = (id: string) => {
-    setSelectedPaperIds((prev) =>
-      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
-    );
-  };
+  const handleGenerate = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const researchTopic = topic.trim();
+    if (!researchTopic || generating) return;
 
-  const toggleSection = (section: string) => {
-    setSelectedSections((prev) =>
-      prev.includes(section) ? prev.filter((s) => s !== section) : [...prev, section]
-    );
-  };
-
-  const handleGenerate = async () => {
-    const reportTopic = topic.trim() || title.trim();
-    if (!reportTopic && selectedPaperIds.length === 0) return;
     setGenerating(true);
-
-    const sourcePapers = allPapers.filter((p) => selectedPaperIds.includes(p.id));
-    const reportTitle = title.trim() || `${reportType}: ${sourcePapers[0]?.title.slice(0, 35)}...`;
-
+    setError('');
     try {
-      const report = reportTopic
-        ? await aiService.generateResearchReport(reportTopic)
-        : await aiService.generateReport(reportTitle, reportType, sourcePapers, selectedSections);
+      const report = await aiService.generateResearchReport(researchTopic);
       onReportGenerated(report);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Research report generation failed.');
     } finally {
       setGenerating(false);
     }
   };
 
   return (
-    <div className="space-y-8 pb-12 max-w-4xl mx-auto">
-      {/* Header */}
+    <div className="mx-auto max-w-4xl space-y-8 pb-12">
       <div>
-        <div className="flex items-center space-x-2 text-xs font-mono text-[#1D4ED8] uppercase tracking-wider mb-1">
-          <Sparkles className="w-4 h-4" />
+        <div className="mb-1 flex items-center space-x-2 text-xs font-mono uppercase tracking-wider text-[#1D4ED8]">
+          <Sparkles className="h-4 w-4" />
           <span>AI Report Generator</span>
         </div>
-        <h2 className="text-2xl font-extrabold text-[#171717] tracking-tight">Generate Research Report</h2>
-        <p className="text-xs text-[#6B6B67] mt-1">
-          Combine paper metadata, structured AI summaries, and cross-domain synthesis into publication-grade documents.
+        <h2 className="text-2xl font-extrabold tracking-tight">Generate Research Report</h2>
+        <p className="mt-1 text-xs text-[#6B6B67]">
+          Enter a research topic. The full research crew will find papers, analyze the field, and write a report.
         </p>
       </div>
 
       {generating ? (
         <LoadingState
           message="AI Agents Writing & Structuring Academic Report..."
-          subMessage="Formatting citations, generating markdown document sections, and executing cross-reference validation..."
+          subMessage="The full crew is searching papers, analyzing research, and generating your report."
         />
       ) : (
-        <div className="space-y-6">
-          {/* Step 1: Select Source Papers */}
-          <div className="glass-panel rounded-2xl p-6 space-y-3">
-            <h3 className="text-sm font-bold text-[#171717]">Research topic</h3>
-            <p className="text-xs text-[#6B6B67]">The backend crew searches verified papers and writes the complete report.</p>
+        <form onSubmit={handleGenerate} className="space-y-4">
+          <div className="glass-panel space-y-3 rounded-2xl p-6">
+            <label htmlFor="report-topic" className="block text-sm font-bold">
+              Research topic
+            </label>
             <input
+              id="report-topic"
               value={topic}
               onChange={(event) => setTopic(event.target.value)}
               placeholder="e.g. Federated learning for medical imaging"
-              className="w-full rounded-xl border border-[#D9D7D0] bg-white px-4 py-2.5 text-sm outline-none focus:border-[#1D4ED8]"
+              required
+              minLength={2}
+              maxLength={500}
+              className="w-full rounded-xl border border-[#D9D7D0] bg-white px-4 py-3 text-sm outline-none focus:border-[#1D4ED8]"
             />
           </div>
-
-          {/* Step 1: Select Source Papers */}
-          <div className="glass-panel rounded-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-[#D9D7D0] pb-3">
-              <h3 className="text-sm font-bold text-[#171717] flex items-center space-x-2">
-                <BookMarked className="w-4 h-4 text-[#1D4ED8]" />
-                <span>1. Select Source Papers ({selectedPaperIds.length} Selected)</span>
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-56 overflow-y-auto pr-1">
-              {allPapers.map((paper) => {
-                const isSelected = selectedPaperIds.includes(paper.id);
-                return (
-                  <button
-                    key={paper.id}
-                    onClick={() => togglePaper(paper.id)}
-                    className={`p-3 rounded-xl border text-left flex items-start space-x-3 transition-all ${
-                      isSelected
-                        ? 'bg-[#DBEAFE] text-[#1D4ED8] border-[#1D4ED8]/50 shadow-glow-purple'
-                        : 'bg-black/5 text-[#6B6B67] border-[#D9D7D0] hover:text-[#171717]'
-                    }`}
-                  >
-                    <div className={`w-4 h-4 rounded border mt-0.5 flex items-center justify-center shrink-0 ${
-                      isSelected ? 'bg-[#1D4ED8] border-[#1D4ED8]' : 'border-[#C4C2BB]'
-                    }`}>
-                      {isSelected && <Check className="w-3 h-3 text-[#171717]" />}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <span className="text-xs font-semibold text-[#171717] block truncate">{paper.title}</span>
-                      <span className="text-[11px] text-[#6B6B67] font-mono">{paper.authors[0]} et al. ({paper.year})</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Step 2: Configure Report Type & Title */}
-          <div className="glass-panel rounded-2xl p-6 space-y-4">
-            <h3 className="text-sm font-bold text-[#171717] flex items-center space-x-2 border-b border-[#D9D7D0] pb-3">
-              <Layers className="w-4 h-4 text-[#1D4ED8]" />
-              <span>2. Choose Report Format & Title</span>
-            </h3>
-
-            <div className="space-y-4">
-              <div>
-                <label className="text-xs text-[#6B6B67] block mb-1.5 font-medium">Document Title (Optional)</label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Systematic Literature Review on Multi-Agent LLM Reasoning"
-                  className="w-full bg-white border border-[#D9D7D0] rounded-xl px-4 py-2.5 text-sm text-[#171717] placeholder-[#8B8F98] focus:outline-none focus:border-[#1D4ED8]"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs text-[#6B6B67] block mb-2 font-medium">Report Type</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                  {(['Literature Review', 'Research Summary', 'Comparative Analysis', 'Academic Report', 'Custom'] as const).map((type) => (
-                    <button
-                      key={type}
-                      onClick={() => setReportType(type)}
-                      className={`p-3 rounded-xl border text-xs font-semibold transition-all ${
-                        reportType === type
-                          ? 'bg-[#DBEAFE] text-[#1D4ED8] border-[#1D4ED8]/50 shadow-glow-purple'
-                          : 'bg-black/5 text-[#6B6B67] border-[#D9D7D0] hover:text-[#171717]'
-                      }`}
-                    >
-                      {type}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Step 3: Select Document Sections */}
-          <div className="glass-panel rounded-2xl p-6 space-y-4">
-            <h3 className="text-sm font-bold text-[#171717] flex items-center space-x-2 border-b border-[#D9D7D0] pb-3">
-              <Settings2 className="w-4 h-4 text-emerald-600" />
-              <span>3. Include Document Sections</span>
-            </h3>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {availableSections.map((sec) => {
-                const isChecked = selectedSections.includes(sec);
-                return (
-                  <button
-                    key={sec}
-                    onClick={() => toggleSection(sec)}
-                    className={`p-2.5 rounded-xl border text-xs font-medium flex items-center space-x-2 transition-all ${
-                      isChecked
-                        ? 'bg-black/[0.04] text-[#171717] border-[#1D4ED8]/40'
-                        : 'bg-black/5 text-[#6B6B67] border-[#D9D7D0] hover:text-[#171717]'
-                    }`}
-                  >
-                    <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center ${
-                      isChecked ? 'bg-[#1D4ED8] border-[#1D4ED8]' : 'border-[#C4C2BB]'
-                    }`}>
-                      {isChecked && <Check className="w-2.5 h-2.5 text-[#171717]" />}
-                    </div>
-                    <span>{sec}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Submit Action */}
+          {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
           <button
-            onClick={handleGenerate}
-            disabled={selectedPaperIds.length === 0 || selectedSections.length === 0}
-            className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#1D4ED8] to-[#1D4ED8] text-white text-base font-bold shadow-glow-purple-lg hover:opacity-95 active:scale-[0.99] transition-all flex items-center justify-center space-x-2 disabled:opacity-50"
+            type="submit"
+            disabled={!topic.trim()}
+            className="flex w-full items-center justify-center space-x-2 rounded-2xl bg-[#1D4ED8] py-4 text-base font-bold text-white shadow-glow-purple-lg transition-all hover:opacity-95 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <Sparkles className="w-5 h-5" />
+            <Sparkles className="h-5 w-5" />
             <span>Generate Research Report</span>
-            <ArrowRight className="w-5 h-5 ml-1" />
+            <ArrowRight className="ml-1 h-5 w-5" />
           </button>
-        </div>
+        </form>
+      )}
+
+      {reports.length > 0 && (
+        <section className="space-y-3" aria-labelledby="saved-reports-heading">
+          <div>
+            <h3 id="saved-reports-heading" className="text-lg font-bold">Your saved reports</h3>
+            <p className="mt-1 text-xs text-[#6B6B67]">Open a generated report to continue reading or editing it.</p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {reports.map((report) => (
+              <button
+                key={report.id}
+                type="button"
+                onClick={() => onOpenReport(report)}
+                className="glass-panel glass-panel-hover flex items-start gap-3 rounded-2xl p-4 text-left"
+              >
+                <FileText className="mt-0.5 h-5 w-5 shrink-0 text-[#1D4ED8]" />
+                <span className="min-w-0">
+                  <span className="block font-semibold text-[#171717]">{report.title}</span>
+                  <span className="mt-1 block text-xs text-[#6B6B67]">
+                    {report.date} · {report.wordCount} words · {report.sections.length} sections
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
       )}
     </div>
   );
-};
+}

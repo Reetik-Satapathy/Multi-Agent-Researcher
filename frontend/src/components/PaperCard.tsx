@@ -34,7 +34,7 @@ export const PaperCard: React.FC<PaperCardProps> = ({
 
   return (
     <div className="glass-panel glass-panel-hover rounded-2xl p-5 md:p-6 flex flex-col justify-between space-y-4 group">
-      {/* Top Header: Title & Save Icon */}
+      {/* Top Header */}
       <div>
         <div className="flex items-start justify-between gap-3 mb-2">
           <h3 
@@ -44,17 +44,6 @@ export const PaperCard: React.FC<PaperCardProps> = ({
             {paper.title}
           </h3>
 
-          <button
-            onClick={() => onSaveToggle(paper)}
-            className={`p-2 rounded-xl border transition-all shrink-0 ${
-              isSaved || paper.isSaved
-                ? 'bg-[#DBEAFE] text-[#1D4ED8] border-[#1D4ED8]/50 shadow-glow-purple'
-                : 'bg-black/5 text-[#6B6B67] border-[#D9D7D0] hover:text-[#171717] hover:bg-black/[0.04]'
-            }`}
-            title={isSaved ? 'Remove from Saved' : 'Save Paper'}
-          >
-            <Bookmark className={`w-4 h-4 ${isSaved || paper.isSaved ? 'fill-[#1D4ED8]' : ''}`} />
-          </button>
         </div>
 
         {/* Authors */}
@@ -85,6 +74,20 @@ export const PaperCard: React.FC<PaperCardProps> = ({
       {/* Action Toolbar */}
       <div className="pt-4 border-t border-[#D9D7D0] flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center space-x-2">
+          <button
+            type="button"
+            onClick={() => onSaveToggle(paper)}
+            aria-pressed={isSaved || Boolean(paper.isSaved)}
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
+              isSaved || paper.isSaved
+                ? 'bg-[#DBEAFE] text-[#1D4ED8] border-[#1D4ED8]/50'
+                : 'bg-white text-[#6B6B67] border-[#D9D7D0] hover:text-[#171717]'
+            }`}
+          >
+            <Bookmark className={`w-3.5 h-3.5 ${isSaved || paper.isSaved ? 'fill-[#1D4ED8]' : ''}`} />
+            <span>{isSaved || paper.isSaved ? 'Saved' : 'Save Paper'}</span>
+          </button>
+
           {/* AI Summary Action */}
           <button
             onClick={() => onSummarize(paper)}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   ArrowLeft, 
   Sparkles, 
@@ -12,6 +12,19 @@ import {
 import type { Paper } from '../types/research';
 import { PaperMetadata } from '../components/PaperMetadata';
 import { aiService } from '../services/aiService';
+import { readLocalStorage, writeLocalStorage } from '../hooks/useLocalStorageState';
+
+interface PaperChatMessage {
+  sender: 'user' | 'ai';
+  text: string;
+}
+
+function initialPaperMessages(paper: Paper): PaperChatMessage[] {
+  return readLocalStorage(`paper-chat-v1-${encodeURIComponent(paper.id)}`, [{
+    sender: 'ai',
+    text: `Hello! I am your AI Research Assistant for **"${paper.title}"**. Ask me any question, or select a quick action below.`
+  }]);
+}
 
 interface PaperDetailViewProps {
   paper: Paper;
@@ -35,24 +48,48 @@ export const PaperDetailView: React.FC<PaperDetailViewProps> = ({
   isCompared = false
 }) => {
   const [assistantInput, setAssistantInput] = useState('');
-  const [messages, setMessages] = useState<Array<{ sender: 'user' | 'ai'; text: string }>>([
-    {
-      sender: 'ai',
-      text: `Hello! I am your AI Research Assistant for **"${paper.title}"**. Ask me any question, or select a quick action below.`
-    }
-  ]);
+  const [messages, setMessages] = useState<PaperChatMessage[]>(() => initialPaperMessages(paper));
+  const [chatPaperId, setChatPaperId] = useState(paper.id);
   const [loadingAi, setLoadingAi] = useState(false);
+  const [assistantError, setAssistantError] = useState('');
+
+  useEffect(() => {
+    if (chatPaperId !== paper.id) {
+      setMessages(initialPaperMessages(paper));
+      setChatPaperId(paper.id);
+    }
+    setAssistantInput('');
+    setAssistantError('');
+  }, [paper.id, paper.title, chatPaperId]);
+
+  useEffect(() => {
+    if (chatPaperId === paper.id) {
+      writeLocalStorage(`paper-chat-v1-${encodeURIComponent(paper.id)}`, messages);
+    }
+  }, [chatPaperId, messages, paper.id]);
 
   const handleSendPrompt = async (promptText: string) => {
-    if (!promptText.trim()) return;
+    const question = promptText.trim();
+    if (!question || loadingAi) return;
 
-    setMessages((prev) => [...prev, { sender: 'user', text: promptText }]);
+    const history = messages
+      .filter((message) => message.sender !== 'ai' || !message.text.startsWith('Hello! I am your AI Research Assistant'))
+      .map((message) => ({
+        role: message.sender === 'ai' ? 'assistant' as const : 'user' as const,
+        content: message.text,
+      }));
+    setMessages((prev) => [...prev, { sender: 'user', text: question }]);
     setAssistantInput('');
     setLoadingAi(true);
-
-    const responseText = await aiService.askAssistant(paper, promptText);
-    setMessages((prev) => [...prev, { sender: 'ai', text: responseText }]);
-    setLoadingAi(false);
+    setAssistantError('');
+    try {
+      const responseText = await aiService.askAssistant(paper, question, history);
+      setMessages((prev) => [...prev, { sender: 'ai', text: responseText }]);
+    } catch (caught) {
+      setAssistantError(caught instanceof Error ? caught.message : 'The paper assistant request failed.');
+    } finally {
+      setLoadingAi(false);
+    }
   };
 
   const quickPrompts = [
@@ -79,13 +116,13 @@ export const PaperDetailView: React.FC<PaperDetailViewProps> = ({
           <button
             onClick={() => onSaveToggle(paper)}
             className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
-              isSaved || paper.isSaved
+              isSaved
                 ? 'bg-[#DBEAFE] text-[#1D4ED8] border-[#1D4ED8]/40 shadow-glow-purple'
                 : 'bg-black/5 text-[#6B6B67] border-[#D9D7D0] hover:text-[#171717]'
             }`}
           >
             <Bookmark className="w-3.5 h-3.5" />
-            <span>{isSaved || paper.isSaved ? 'Saved' : 'Save'}</span>
+            <span>{isSaved ? 'Saved' : 'Save'}</span>
           </button>
 
           <button
@@ -237,6 +274,7 @@ export const PaperDetailView: React.FC<PaperDetailViewProps> = ({
                 <button
                   key={idx}
                   onClick={() => handleSendPrompt(prompt.replace('✦ ', ''))}
+                  disabled={loadingAi}
                   className="px-2.5 py-1 rounded-lg bg-[#DBEAFE] hover:bg-[#DBEAFE]/70 border border-[#1D4ED8]/30 text-[11px] text-[#1D4ED8] font-medium transition-all"
                 >
                   {prompt}
@@ -270,6 +308,11 @@ export const PaperDetailView: React.FC<PaperDetailViewProps> = ({
               )}
             </div>
 
+            <p className="pt-2 text-[10px] text-[#6B6B67]">
+              Answers use this paper&apos;s metadata and abstract; details not present there may be unavailable.
+            </p>
+            {assistantError && <p role="alert" className="mt-2 rounded-lg bg-red-50 p-2 text-xs text-red-700">{assistantError}</p>}
+
             {/* Chat Input */}
             <form
               onSubmit={(e) => {
@@ -283,10 +326,12 @@ export const PaperDetailView: React.FC<PaperDetailViewProps> = ({
                 value={assistantInput}
                 onChange={(e) => setAssistantInput(e.target.value)}
                 placeholder="Ask AI about this paper..."
+                disabled={loadingAi}
                 className="flex-1 bg-white border border-[#D9D7D0] rounded-xl px-3 py-2 text-xs text-[#171717] placeholder-[#8B8F98] focus:outline-none focus:border-[#1D4ED8]"
               />
               <button
                 type="submit"
+                disabled={loadingAi || !assistantInput.trim()}
                 className="p-2 rounded-xl bg-gradient-to-r from-[#1D4ED8] to-[#1D4ED8] text-white shrink-0 shadow-glow-purple hover:opacity-90"
               >
                 <Send className="w-3.5 h-3.5" />

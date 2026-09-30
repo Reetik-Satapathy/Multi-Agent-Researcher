@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Filter, SlidersHorizontal, X } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { Search, SlidersHorizontal, X, Trash2 } from 'lucide-react';
 import { PaperCard } from '../components/PaperCard';
 import { LoadingState } from '../components/LoadingState';
 import { EmptyState } from '../components/EmptyState';
 import type { Paper } from '../types/research';
 import { paperService } from '../services/paperService';
 import type { PaperFilters } from '../services/paperService';
+import { useLocalStorageState } from '../hooks/useLocalStorageState';
 
 interface DiscoverPapersViewProps {
   onOpenPaper: (paper: Paper) => void;
@@ -26,48 +27,79 @@ export const DiscoverPapersView: React.FC<DiscoverPapersViewProps> = ({
   savedPapers,
   initialQuery = ''
 }) => {
-  const [query, setQuery] = useState(initialQuery);
-  const [papers, setPapers] = useState<Paper[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useLocalStorageState('discover-query-v1', initialQuery);
+  const [submittedQuery, setSubmittedQuery] = useLocalStorageState('discover-submitted-query-v1', initialQuery);
+  const [hasSearched, setHasSearched] = useLocalStorageState('discover-has-searched-v1', false);
+  const [papers, setPapers] = useLocalStorageState<Paper[]>('discover-results-v1', []);
+  const [loading, setLoading] = useState(false);
+  const [searchError, setSearchError] = useState('');
+  const searchRequestId = useRef(0);
 
-  // Filters State
-  const [selectedArea, setSelectedArea] = useState<string>('All Areas');
-  const [selectedYear, setSelectedYear] = useState<string>('All Years');
-  const [openAccessOnly, setOpenAccessOnly] = useState<boolean>(false);
-  const [sortBy, setSortBy] = useState<'relevance' | 'citations' | 'year'>('relevance');
-  const [requestedCount, setRequestedCount] = useState(20);
+  // Filters apply to the current result set without rerunning the search.
+  const [selectedYear, setSelectedYear] = useLocalStorageState<string>('discover-year-v1', 'All Years');
+  const [sortBy, setSortBy] = useLocalStorageState<'relevance' | 'citations' | 'year'>('discover-sort-v1', 'relevance');
+  const [paperCount, setPaperCount] = useLocalStorageState<number>('discover-count-v1', 20);
 
-  const researchAreas = ['All Areas', 'Artificial Intelligence', 'Computer Science', 'Medicine', 'Neuroscience', 'Physics', 'Robotics'];
-  const years = ['All Years', '2026', '2025', '2024'];
+  const years = [...new Set(papers.map((paper) => paper.year).filter((year) => Number.isFinite(year) && year > 0))]
+    .sort((a, b) => b - a)
+    .map(String);
+  const visiblePapers = papers
+    .filter((paper) => selectedYear === 'All Years' || String(paper.year) === selectedYear)
+    .map((paper, index) => ({ paper, index }))
+    .sort((a, b) => {
+      if (sortBy === 'citations') return b.paper.citations - a.paper.citations || a.index - b.index;
+      if (sortBy === 'year') return b.paper.year - a.paper.year || a.index - b.index;
+      return a.index - b.index;
+    })
+    .map(({ paper }) => paper);
 
-  const fetchPapers = async () => {
+  const fetchPapers = async (overrides: Partial<PaperFilters> = {}) => {
+    const requestId = ++searchRequestId.current;
     setLoading(true);
+    setSearchError('');
     const filters: PaperFilters = {
-      query,
-      count: requestedCount,
-      area: selectedArea,
-      year: selectedYear,
-      openAccessOnly,
-      sortBy
+      query: submittedQuery,
+      count: paperCount,
+      ...overrides,
     };
     try {
       const data = await paperService.searchPapers(filters);
-      setPapers(data);
+      if (requestId === searchRequestId.current) setPapers(data);
+    } catch (error) {
+      if (requestId === searchRequestId.current) {
+        setSearchError(error instanceof Error ? error.message : 'Paper search failed.');
+      }
     } finally {
-      setLoading(false);
+      if (requestId === searchRequestId.current) setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchPapers();
-  }, [query, selectedArea, selectedYear, openAccessOnly, sortBy, requestedCount]);
-
-  const clearFilters = () => {
-    setQuery('');
-    setSelectedArea('All Areas');
+  const handleSearch = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const topic = query.trim();
+    if (!topic) return;
+    setHasSearched(true);
+    setSubmittedQuery(topic);
     setSelectedYear('All Years');
-    setOpenAccessOnly(false);
+    void fetchPapers({ query: topic, count: paperCount });
+  };
+
+  const resetFilters = () => {
+    setSelectedYear('All Years');
     setSortBy('relevance');
+  };
+
+  const clearSearch = () => {
+    searchRequestId.current += 1;
+    setQuery('');
+    setSubmittedQuery('');
+    setHasSearched(false);
+    setPapers([]);
+    setLoading(false);
+    setSearchError('');
+    resetFilters();
+    setSortBy('relevance');
+    setPaperCount(20);
   };
 
   return (
@@ -81,7 +113,7 @@ export const DiscoverPapersView: React.FC<DiscoverPapersViewProps> = ({
       </div>
 
       {/* Large Search Bar */}
-      <div className="relative">
+      <form className="relative" onSubmit={handleSearch}>
         <div className="glass-input rounded-2xl p-2.5 flex items-center space-x-3 shadow-card">
           <Search className="w-5 h-5 text-[#1D4ED8] ml-3 shrink-0" />
           <input
@@ -99,76 +131,68 @@ export const DiscoverPapersView: React.FC<DiscoverPapersViewProps> = ({
               <X className="w-4 h-4" />
             </button>
           )}
+          <button
+            type="submit"
+            disabled={loading || !query.trim()}
+            className="shrink-0 rounded-xl bg-[#1D4ED8] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {loading ? 'Searching...' : 'Search'}
+          </button>
         </div>
-      </div>
+      </form>
 
       {/* Filters Bar */}
       <div className="glass-panel rounded-xl p-4 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Research Area Filter */}
-          <div className="flex items-center space-x-1.5 text-xs text-[#6B6B67]">
-            <Filter className="w-3.5 h-3.5 text-[#1D4ED8]" />
-            <span>Area:</span>
+        <div className="flex flex-wrap items-center gap-4">
+          <label className="flex items-center gap-2 text-xs text-[#6B6B67]">
+            <span>Papers:</span>
             <select
-              value={selectedArea}
-              onChange={(e) => setSelectedArea(e.target.value)}
-              className="bg-[#09090B] border border-[#D9D7D0] text-[#171717] rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:border-[#1D4ED8]"
+              value={paperCount}
+              onChange={(event) => {
+                const count = Number(event.target.value);
+                setPaperCount(count);
+                if (hasSearched) void fetchPapers({ count });
+              }}
+              className="rounded-lg border border-[#D9D7D0] bg-white px-2.5 py-1.5 text-xs text-[#171717] focus:outline-none focus:border-[#1D4ED8]"
             >
-              {researchAreas.map((area) => (
-                <option key={area} value={area}>{area}</option>
+              {[10, 15, 20, 25].map((count) => (
+                <option key={count} value={count}>{count}</option>
               ))}
             </select>
-          </div>
-
-          {/* Year Filter */}
-          <div className="flex items-center space-x-1.5 text-xs text-[#6B6B67]">
+          </label>
+          <label className="flex items-center gap-2 text-xs text-[#6B6B67]">
             <span>Year:</span>
             <select
               value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
-              className="bg-[#09090B] border border-[#D9D7D0] text-[#171717] rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:border-[#1D4ED8]"
+              onChange={(event) => setSelectedYear(event.target.value)}
+              className="rounded-lg border border-[#D9D7D0] bg-white px-2.5 py-1.5 text-xs text-[#171717] focus:outline-none focus:border-[#1D4ED8]"
             >
-              {years.map((year) => (
-                <option key={year} value={year}>{year}</option>
-              ))}
+              <option value="All Years">All Years</option>
+              {years.map((year) => <option key={year} value={year}>{year}</option>)}
             </select>
-          </div>
-
-          {/* Open Access Toggle */}
-          <label className="flex items-center space-x-2 text-xs text-[#6B6B67] cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={openAccessOnly}
-              onChange={(e) => setOpenAccessOnly(e.target.checked)}
-              className="rounded bg-black border-[#C4C2BB] text-[#1D4ED8] focus:ring-0"
-            />
-            <span>Open Access Only</span>
           </label>
         </div>
 
-        {/* Sorting & Clear */}
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-wrap items-center gap-3">
           <label className="flex items-center gap-1.5 text-xs text-[#6B6B67]">
-            <span>Papers:</span>
-            <input type="number" min={1} max={100} value={requestedCount} onChange={(e) => setRequestedCount(Math.min(100, Math.max(1, Number(e.target.value) || 1)))} className="w-16 rounded-lg border border-[#D9D7D0] bg-[#09090B] px-2.5 py-1 text-xs text-[#171717] outline-none" />
-          </label>
-          <div className="flex items-center space-x-1.5 text-xs text-[#6B6B67]">
             <SlidersHorizontal className="w-3.5 h-3.5" />
             <span>Sort:</span>
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="bg-[#09090B] border border-[#D9D7D0] text-[#171717] rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:border-[#1D4ED8]"
+              onChange={(event) => setSortBy(event.target.value as 'relevance' | 'citations' | 'year')}
+              className="rounded-lg border border-[#D9D7D0] bg-white px-2.5 py-1.5 text-xs text-[#171717] focus:outline-none focus:border-[#1D4ED8]"
             >
               <option value="relevance">Relevance</option>
               <option value="citations">Most Citations</option>
               <option value="year">Latest Release</option>
             </select>
-          </div>
+          </label>
 
           <button
-            onClick={clearFilters}
-            className="text-xs text-[#6B6B67] hover:text-[#171717] transition-colors"
+            type="button"
+            onClick={resetFilters}
+            disabled={selectedYear === 'All Years' && sortBy === 'relevance'}
+            className="text-xs text-[#6B6B67] transition-colors hover:text-[#171717] disabled:cursor-not-allowed disabled:opacity-40"
           >
             Reset
           </button>
@@ -178,16 +202,37 @@ export const DiscoverPapersView: React.FC<DiscoverPapersViewProps> = ({
       {/* Results Header */}
       <div className="flex items-center justify-between px-1">
         <span className="text-xs font-mono text-[#6B6B67]">
-          Showing {papers.length} publications
+          Showing {visiblePapers.length} publications
         </span>
+        {hasSearched && !loading && !searchError && selectedYear === 'All Years' && papers.length < paperCount && (
+          <span className="text-xs text-[#6B6B67]" role="status">
+            Found {papers.length} of {paperCount} requested; showing all available papers.
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={clearSearch}
+          disabled={!hasSearched && !query && papers.length === 0 && selectedYear === 'All Years' && sortBy === 'relevance' && paperCount === 20}
+          className="flex items-center gap-1.5 rounded-lg border border-[#D9D7D0] px-3 py-1.5 text-xs font-semibold text-[#6B6B67] transition-colors hover:border-red-300 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+          <span>Clear results</span>
+        </button>
       </div>
 
       {/* Results Grid */}
-      {loading ? (
+      {searchError ? (
+        <p role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-700">{searchError}</p>
+      ) : !hasSearched ? (
+        <EmptyState
+          title="Ready to discover papers?"
+          description="Enter a research topic above and select Search to find relevant academic papers."
+        />
+      ) : loading ? (
         <LoadingState message="Discovering Papers across Academic Repositories..." />
-      ) : papers.length > 0 ? (
+      ) : visiblePapers.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {papers.map((paper) => (
+          {visiblePapers.map((paper) => (
             <PaperCard
               key={paper.id}
               paper={paper}
@@ -202,10 +247,10 @@ export const DiscoverPapersView: React.FC<DiscoverPapersViewProps> = ({
         </div>
       ) : (
         <EmptyState
-          title="No Matching Papers Found"
-          description="Try broadening your search query or clear active filters."
-          actionText="Reset Filters"
-          onAction={clearFilters}
+          title={papers.length > 0 ? 'No Papers for This Year' : 'No Matching Papers Found'}
+          description={papers.length > 0 ? 'Choose another year or reset the year filter.' : 'Try broadening your search query or clear active filters.'}
+          actionText={papers.length > 0 ? 'Reset Filters' : 'Clear Search'}
+          onAction={papers.length > 0 ? resetFilters : clearSearch}
         />
       )}
     </div>

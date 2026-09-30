@@ -1,4 +1,5 @@
 import type { Paper, PaperSummary, PaperComparison, ResearchReport, ReportSection } from '../types/research';
+import { parseReportMarkdown } from './reportMarkdown';
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
 
@@ -11,10 +12,11 @@ export const aiService = {
     });
     if (!response.ok) throw new Error(await response.text());
     const data = await response.json() as { markdown: string };
-    const sections = markdownSections(data.markdown);
+    const sections = parseReportMarkdown(data.markdown);
+    const reportTitle = data.markdown.match(/^#\s+(.+)$/m)?.[1]?.trim();
     return {
       id: `report-${Date.now()}`,
-      title: `Research Report: ${topic}`,
+      title: reportTitle || `Research Report: ${topic}`,
       type: 'Academic Report',
       sourcePapers: [],
       date: new Date().toISOString().split('T')[0],
@@ -23,14 +25,6 @@ export const aiService = {
       tags: ['verified papers', topic],
     };
 
-    function markdownSections(markdown: string): ReportSection[] {
-      const parts = markdown.split(/(?=^#{1,3}\s)/m).filter((part) => part.trim());
-      return parts.map((part, index) => {
-        const lines = part.trim().split('\n');
-        const heading = lines.shift()?.replace(/^#{1,3}\s*/, '').trim() || `Section ${index + 1}`;
-        return { id: `section-${index + 1}`, title: heading, content: lines.join('\n').trim() };
-      });
-    }
   },
   // Generate structured AI summary for a paper
   async generateSummary(paper: Paper): Promise<PaperSummary> {
@@ -217,23 +211,33 @@ export const aiService = {
   },
 
   // Interactive AI Assistant response
-  async askAssistant(paper: Paper, question: string): Promise<string> {
-    await new Promise((resolve) => setTimeout(resolve, 600));
-
-    const q = question.toLowerCase();
-    if (q.includes('summarize') || q.includes('tldr')) {
-      return `**AI Summary for "${paper.title}"**:\n\nThis paper introduces ${paper.methodology || 'a novel transformer model'} to address critical limitations in ${paper.area}. The authors demonstrate a ${paper.citations > 200 ? 'highly influential' : 'pioneering'} approach achieving major benchmark improvements.`;
+  async askAssistant(
+    paper: Paper,
+    question: string,
+    history: Array<{ role: 'user' | 'assistant'; content: string }> = [],
+  ): Promise<string> {
+    const response = await fetch(`${API_BASE_URL}/api/papers/questions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        paper: {
+          title: paper.title,
+          authors: paper.authors,
+          year: paper.year,
+          journal: paper.journal,
+          doi: paper.doi,
+          url: paper.url,
+          abstract: paper.abstract,
+        },
+        question,
+        history: history.slice(-8),
+      }),
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => null) as { detail?: string } | null;
+      throw new Error(body?.detail || `Paper assistant request failed (${response.status}).`);
     }
-    if (q.includes('method') || q.includes('architecture')) {
-      return `**Methodology Breakdown**:\n\n${paper.methodology || 'The authors utilize a multi-scale transformer architecture with automated verification loops'}.\n\n*Key innovation*: Combines continuous embeddings with topological graph aggregation.`;
-    }
-    if (q.includes('limitation') || q.includes('weakness')) {
-      return `**Identified Limitations**:\n\n` + (paper.limitations || ['1. High GPU memory consumption during initial graph construction.', '2. Sensitivity to hardware calibration.']).map((l, i) => `${i + 1}. ${l}`).join('\n');
-    }
-    if (q.includes('finding') || q.includes('result')) {
-      return `**Primary Findings**:\n\n` + (paper.keyFindings || ['1. Outperforms state-of-the-art MIL methods by 9.4% AUC.', '2. Reduces false negatives by 31%.']).map((f, i) => `${i + 1}. ${f}`).join('\n');
-    }
-
-    return `Based on **"${paper.title}"** (${paper.year}):\n\nThe authors address "${question}" through their novel ${paper.area.toLowerCase()} framework. Their empirical results confirm that ${paper.abstract.slice(0, 160)}...`;
+    const data = await response.json() as { answer: string };
+    return data.answer;
   }
 };

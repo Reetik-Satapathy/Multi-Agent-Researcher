@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Menu } from 'lucide-react';
 import { Sidebar, type ActiveTab } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 import { PageContainer } from './components/PageContainer';
-import { DashboardView } from './views/DashboardView';
 import { DiscoverPapersView } from './views/DiscoverPapersView';
 import { PaperDetailView } from './views/PaperDetailView';
 import { AISummaryView } from './views/AISummaryView';
@@ -16,27 +14,71 @@ import { DocumentChatView } from './views/DocumentChatView';
 
 import { MOCK_PAPERS, MOCK_PROJECTS, MOCK_REPORTS, INITIAL_USER } from './data/mockData';
 import type { Paper, Project, ResearchReport } from './types/research';
-import type { AgentId } from './types/agents';
 import { workspaceService } from './services/workspaceService';
-import { agentService } from './services/agentService';
+import { useLocalStorageState } from './hooks/useLocalStorageState';
+import { authService, type GoogleUser } from './services/authService';
 
-const RESEARCH_SECTIONS: ActiveTab[] = ['my-research', 'projects', 'saved', 'history'];
+const RESEARCH_SECTIONS: ActiveTab[] = ['my-research', 'projects', 'saved'];
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('discover');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
+  const [googleUser, setGoogleUser] = useState<GoogleUser | null>(null);
+  const [googleEnabled, setGoogleEnabled] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [authError, setAuthError] = useState('');
+  const [loginPromptDismissed, setLoginPromptDismissed] = useLocalStorageState(
+    'google-login-prompt-dismissed-v1',
+    false,
+  );
 
-  const [allPapers, setAllPapers] = useState<Paper[]>(MOCK_PAPERS);
+  const [savedPapers, setSavedPapers] = useLocalStorageState<Paper[]>(
+    'saved-papers-v1',
+    MOCK_PAPERS.filter((paper) => paper.isSaved),
+  );
   const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS);
-  const [reports, setReports] = useState<ResearchReport[]>(MOCK_REPORTS);
+  const [reports, setReports] = useLocalStorageState<ResearchReport[]>('generated-reports-v1', MOCK_REPORTS);
   const userProfile = INITIAL_USER;
 
+  useEffect(() => {
+    let active = true;
+    void authService.getSession()
+      .then((session) => {
+        if (!active) return;
+        setGoogleUser(session.user);
+        setGoogleEnabled(session.google_enabled);
+      })
+      .catch((error: unknown) => {
+        if (active) setAuthError(error instanceof Error ? error.message : 'Could not check Google sign-in status.');
+      })
+      .finally(() => {
+        if (active) setAuthLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleGoogleSignIn = () => {
+    setAuthError('');
+    authService.startGoogleLogin();
+  };
+
+  const handleGoogleSignOut = async () => {
+    setAuthError('');
+    try {
+      await authService.logout();
+      setGoogleUser(null);
+      setLoginPromptDismissed(true);
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Could not sign out.');
+    }
+  };
+
   const [selectedPaper, setSelectedPaper] = useState<Paper>(MOCK_PAPERS[0]);
-  const [selectedReport, setSelectedReport] = useState<ResearchReport>(MOCK_REPORTS[0]);
+  const [selectedReport, setSelectedReport] = useLocalStorageState<ResearchReport>('selected-report-v1', MOCK_REPORTS[0]);
   const [comparedPapers, setComparedPapers] = useState<Paper[]>([MOCK_PAPERS[0], MOCK_PAPERS[1]]);
-  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const tablet = window.matchMedia('(max-width: 1023px)');
@@ -70,39 +112,12 @@ export function App() {
   };
 
   const handleSaveToggle = (paper: Paper) => {
-    setAllPapers((prev) =>
-      prev.map((p) => (p.id === paper.id ? { ...p, isSaved: !p.isSaved } : p))
-    );
-  };
-
-  const handleAgentSearch = async (query: string, agentId: AgentId) => {
-    setIsSearching(true);
-    workspaceService.addRecentSearch(query);
-    setSearchQuery(query);
-
-    try {
-      const result = await agentService.dispatch(agentId, query);
-      if (result.intent === 'discover') {
-        setActiveTab('discover');
-      } else if (result.intent === 'summarize') {
-        handleSummarizePaper(result.paper);
-      } else if (result.intent === 'compare') {
-        if (result.papers.length >= 2) {
-          setComparedPapers(result.papers.slice(0, 4));
-        }
-        setActiveTab('compare');
-      } else if (result.intent === 'report') {
-        if (result.papers.length > 0) {
-          setComparedPapers(result.papers.slice(0, 4));
-        }
-        setActiveTab('reports');
-      } else if (result.intent === 'assistant') {
-        setSelectedPaper(result.paper);
-        setActiveTab('paper-detail');
-      }
-    } finally {
-      setIsSearching(false);
-    }
+    setSavedPapers((current) => {
+      const alreadySaved = current.some((saved) => saved.id === paper.id);
+      return alreadySaved
+        ? current.filter((saved) => saved.id !== paper.id)
+        : [{ ...paper, isSaved: true }, ...current];
+    });
   };
 
   const handleGenerateReportFromPapers = (sourcePapers: Paper[]) => {
@@ -140,10 +155,8 @@ export function App() {
     }
   };
 
-  const savedPapersList = allPapers.filter((p) => p.isSaved);
-  const isDashboard = activeTab === 'dashboard';
-  const researchSection =
-    activeTab === 'saved' ? 'saved' : activeTab === 'history' ? 'history' : 'projects';
+  const savedPapersList = savedPapers;
+  const researchSection = activeTab === 'saved' ? 'saved' : 'projects';
 
   return (
     <div className="flex min-h-screen overflow-x-hidden bg-[#F5F3EE] font-sans text-[#171717]">
@@ -152,7 +165,10 @@ export function App() {
         setActiveTab={setActiveTab}
         collapsed={sidebarCollapsed}
         setCollapsed={setSidebarCollapsed}
-        user={userProfile}
+        user={googleUser}
+        googleEnabled={googleEnabled}
+        onSignIn={handleGoogleSignIn}
+        onSignOut={() => void handleGoogleSignOut()}
         mobileOpen={mobileNavOpen}
         onMobileClose={() => setMobileNavOpen(false)}
       />
@@ -162,39 +178,17 @@ export function App() {
           sidebarCollapsed ? 'md:pl-20' : 'md:pl-[248px]'
         }`}
       >
-        {!isDashboard && (
-          <TopBar
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            savedCount={savedPapersList.length}
-            onOpenMobileNav={() => setMobileNavOpen(true)}
-          />
-        )}
+        <TopBar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          savedCount={savedPapersList.length}
+          onOpenMobileNav={() => setMobileNavOpen(true)}
+        />
 
-        {isDashboard && (
-          <button
-            type="button"
-            onClick={() => setMobileNavOpen(true)}
-            className="absolute left-4 top-4 z-30 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#D9D7D0] bg-white/80 text-[#171717] md:hidden"
-            aria-label="Open navigation"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-        )}
-
-        <main className={isDashboard ? 'relative min-h-screen w-full md:h-screen md:overflow-hidden' : 'min-w-0 flex-1'}>
-          {isDashboard && (
-            <DashboardView
-              user={userProfile}
-              onAgentSearch={handleAgentSearch}
-              isSearching={isSearching}
-            />
-          )}
-
+        <main className="min-w-0 flex-1">
           {activeTab === 'discover' && (
             <PageContainer>
               <DiscoverPapersView
-                initialQuery={searchQuery}
                 onOpenPaper={handleOpenPaper}
                 onSummarizePaper={handleSummarizePaper}
                 onCompareToggle={handleCompareToggle}
@@ -214,7 +208,7 @@ export function App() {
                 onCompareToggle={handleCompareToggle}
                 onSaveToggle={handleSaveToggle}
                 onGenerateReport={handleGenerateReportFromPapers}
-                isSaved={selectedPaper.isSaved}
+                isSaved={savedPapersList.some((paper) => paper.id === selectedPaper.id)}
                 isCompared={comparedPapers.some((p) => p.id === selectedPaper.id)}
               />
             </PageContainer>
@@ -239,9 +233,9 @@ export function App() {
           {activeTab === 'reports' && (
             <PageContainer>
               <ReportGeneratorView
-                initialSourcePapers={comparedPapers}
-                allPapers={allPapers}
+                reports={reports}
                 onReportGenerated={handleReportGenerated}
+                onOpenReport={handleOpenReport}
               />
             </PageContainer>
           )}
@@ -294,6 +288,61 @@ export function App() {
           )}
         </main>
       </div>
+      {authError && (googleUser || loginPromptDismissed) && (
+        <div
+          role="alert"
+          className="fixed bottom-4 right-4 z-[110] flex max-w-lg items-center gap-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 shadow-lg"
+        >
+          <span>{authError}</span>
+          <button
+            type="button"
+            onClick={() => setAuthError('')}
+            className="shrink-0 font-semibold underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+      {!authLoading && !googleUser && !loginPromptDismissed && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 p-4">
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="google-signin-title"
+            className="w-full max-w-md space-y-5 rounded-2xl border border-[#D9D7D0] bg-white p-6 shadow-2xl"
+          >
+            <div className="space-y-2">
+              <h2 id="google-signin-title" className="text-xl font-bold text-[#171717]">Sign in to your workspace</h2>
+              <p className="text-sm text-[#6B6B67]">
+                Sign in with Google to show your verified account name and email in your profile.
+              </p>
+            </div>
+            {!googleEnabled && (
+              <p role="status" className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
+                Google sign-in needs to be configured by adding Google OAuth credentials to the backend environment.
+              </p>
+            )}
+            {authError && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{authError}</p>}
+            <div className="flex flex-col gap-2 sm:flex-row-reverse">
+              <button
+                type="button"
+                disabled={!googleEnabled}
+                onClick={handleGoogleSignIn}
+                className="rounded-xl bg-[#1D4ED8] px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Continue with Google
+              </button>
+              <button
+                type="button"
+                onClick={() => setLoginPromptDismissed(true)}
+                className="rounded-xl border border-[#D9D7D0] px-4 py-2.5 text-sm font-semibold text-[#6B6B67] hover:bg-[#F5F3EE]"
+              >
+                Do it later
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Sparkles, 
   Save, 
@@ -12,8 +12,9 @@ import {
   BookOpen, 
   List
 } from 'lucide-react';
+import { MarkdownContent } from '../components/MarkdownContent';
+import { useLocalStorageState } from '../hooks/useLocalStorageState';
 import type { ResearchReport, ReportSection } from '../types/research';
-import confetti from 'canvas-confetti';
 
 interface ReportWorkspaceViewProps {
   report: ResearchReport;
@@ -26,11 +27,20 @@ export const ReportWorkspaceView: React.FC<ReportWorkspaceViewProps> = ({
   onBack,
   onSaveReport
 }) => {
-  const [activeSectionId, setActiveSectionId] = useState<string>(report.sections[0]?.id || '');
-  const [sections, setSections] = useState<ReportSection[]>([...report.sections]);
+  const [activeSectionId, setActiveSectionId] = useLocalStorageState<string>(
+    `report-active-section-v1-${report.id}`,
+    report.sections[0]?.id || '',
+  );
+  const [sections, setSections] = useLocalStorageState<ReportSection[]>(`report-draft-v1-${report.id}`, [...report.sections]);
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [aiWorking, setAiWorking] = useState(false);
   const [aiPromptInput, setAiPromptInput] = useState('');
+  const [editing, setEditing] = useState(false);
+
+  useEffect(() => {
+    setActiveSectionId(report.sections[0]?.id || '');
+    setEditing(false);
+  }, [report.id, report.sections]);
 
   const currentSection = sections.find((s) => s.id === activeSectionId) || sections[0];
 
@@ -52,12 +62,7 @@ export const ReportWorkspaceView: React.FC<ReportWorkspaceViewProps> = ({
   };
 
   const handleExportPDF = () => {
-    confetti({
-      particleCount: 50,
-      spread: 60,
-      origin: { y: 0.8 }
-    });
-    alert(`Exporting "${report.title}" as PDF...`);
+    window.print();
   };
 
   const runAiTool = async (action: string) => {
@@ -83,6 +88,16 @@ export const ReportWorkspaceView: React.FC<ReportWorkspaceViewProps> = ({
 
   return (
     <div className="space-y-6 pb-12">
+      <article id="report-print-content" className="report-print-only">
+        <h1>{report.title}</h1>
+        <p className="report-print-meta">{report.type} · {report.wordCount} words</p>
+        {sections.map((section) => (
+          <section key={section.id} className="report-print-section">
+            <h2>{section.title}</h2>
+            <MarkdownContent content={section.content} />
+          </section>
+        ))}
+      </article>
       {/* Top Header & Actions */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#D9D7D0] pb-4">
         <div className="flex items-center space-x-3">
@@ -170,18 +185,27 @@ export const ReportWorkspaceView: React.FC<ReportWorkspaceViewProps> = ({
               <h2 className="text-xl font-bold text-[#171717] tracking-tight">
                 {currentSection?.title}
               </h2>
-              <span className="text-[10px] font-mono text-[#1D4ED8] px-2 py-0.5 rounded bg-[#DBEAFE] border border-[#1D4ED8]/30">
-                EDIT MODE
-              </span>
+              <button
+                type="button"
+                onClick={() => setEditing((current) => !current)}
+                className="rounded bg-[#DBEAFE] px-2 py-1 text-[10px] font-mono text-[#1D4ED8] border border-[#1D4ED8]/30"
+              >
+                {editing ? 'PREVIEW' : 'EDIT'}
+              </button>
             </div>
 
-            {/* Editable Content Textarea */}
-            <textarea
-              value={currentSection?.content || ''}
-              onChange={(e) => updateSectionContent(e.target.value)}
-              rows={16}
-              className="w-full bg-transparent text-[#171717] placeholder-[#8B8F98] text-sm md:text-base leading-relaxed font-sans focus:outline-none resize-none"
-            />
+            {editing ? (
+              <textarea
+                value={currentSection?.content || ''}
+                onChange={(e) => updateSectionContent(e.target.value)}
+                rows={24}
+                className="w-full bg-transparent text-[#171717] placeholder-[#8B8F98] text-sm md:text-base leading-relaxed font-sans focus:outline-none resize-y"
+              />
+            ) : currentSection ? (
+              <MarkdownContent content={currentSection.content} />
+            ) : (
+              <p className="text-sm text-[#6B6B67]">No report sections are available.</p>
+            )}
           </div>
         </div>
 

@@ -114,7 +114,14 @@ class NoveltyAnalysisTool(BaseTool):
 
     def _run(self, research_topic: str, papers_json: str) -> str:
         papers_data = json.loads(papers_json)
-        papers = papers_data.get("papers", papers_data if isinstance(papers_data, list) else [])
+        if isinstance(papers_data, list):
+            papers = papers_data
+        elif isinstance(papers_data, dict):
+            papers = papers_data.get("papers", [])
+        else:
+            raise ValueError("Paper search data must be a JSON object or array.")
+        if not isinstance(papers, list) or any(not isinstance(item, dict) for item in papers):
+            raise ValueError("Paper search data must contain a list of paper objects.")
 
         novelty_score = compute_novelty_score(research_topic, papers)
         similar_papers = rank_similar_items(research_topic, papers)

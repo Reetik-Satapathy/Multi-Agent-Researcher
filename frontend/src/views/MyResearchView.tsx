@@ -3,15 +3,12 @@ import {
   FolderKanban, 
   Bookmark, 
   FileText, 
-  Clock, 
   Plus, 
-  Search, 
   ArrowUpRight
 } from 'lucide-react';
 import { ProjectCard } from '../components/ProjectCard';
 import { PaperCard } from '../components/PaperCard';
 import type { Project, Paper, ResearchReport } from '../types/research';
-import { workspaceService } from '../services/workspaceService';
 
 interface MyResearchViewProps {
   projects: Project[];
@@ -25,7 +22,7 @@ interface MyResearchViewProps {
   onOpenReport: (report: ResearchReport) => void;
   onNewProject: () => void;
   comparedPapers: Paper[];
-  initialSection?: 'projects' | 'saved' | 'reports' | 'history';
+  initialSection?: 'projects' | 'saved' | 'reports';
 }
 
 export const MyResearchView: React.FC<MyResearchViewProps> = ({
@@ -42,13 +39,11 @@ export const MyResearchView: React.FC<MyResearchViewProps> = ({
   comparedPapers,
   initialSection = 'projects',
 }) => {
-  const [activeTab, setActiveTab] = useState<'projects' | 'saved' | 'reports' | 'history'>(initialSection);
+  const [activeTab, setActiveTab] = useState<'projects' | 'saved' | 'reports'>(initialSection);
 
   useEffect(() => {
     setActiveTab(initialSection);
   }, [initialSection]);
-  const recentSearches = workspaceService.getRecentSearches();
-
   return (
     <div className="space-y-8 pb-12">
       {/* Header */}
@@ -56,7 +51,7 @@ export const MyResearchView: React.FC<MyResearchViewProps> = ({
         <div>
           <h2 className="text-2xl font-extrabold text-[#171717] tracking-tight">My Research Workspace</h2>
           <p className="text-xs text-[#6B6B67] mt-1">
-            Organize publications, saved projects, synthesized literature reports, and search history.
+            Organize projects, saved papers, and synthesized literature reports.
           </p>
         </div>
 
@@ -107,17 +102,6 @@ export const MyResearchView: React.FC<MyResearchViewProps> = ({
           <span>Reports ({reports.length})</span>
         </button>
 
-        <button
-          onClick={() => setActiveTab('history')}
-          className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-            activeTab === 'history'
-              ? 'bg-[#DBEAFE] text-[#1D4ED8] border border-[#1D4ED8]/40 shadow-glow-purple'
-              : 'text-[#6B6B67] hover:text-[#171717] hover:bg-black/5'
-          }`}
-        >
-          <Clock className="w-4 h-4" />
-          <span>Research History</span>
-        </button>
       </div>
 
       {/* Tab Content Views */}
@@ -180,24 +164,6 @@ export const MyResearchView: React.FC<MyResearchViewProps> = ({
         </div>
       )}
 
-      {activeTab === 'history' && (
-        <div className="glass-panel rounded-2xl p-6 space-y-3 max-w-xl">
-          <h3 className="text-xs font-mono uppercase text-[#1D4ED8] tracking-wider font-semibold">
-            Recent AI Prompt & Search Logs
-          </h3>
-          <div className="divide-y divide-[#D9D7D0] text-xs text-[#171717] font-mono">
-            {recentSearches.map((query, idx) => (
-              <div key={idx} className="py-3 flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Search className="w-3.5 h-3.5 text-[#6B6B67]" />
-                  <span>{query}</span>
-                </div>
-                <span className="text-[10px] text-[#6B6B67]">Verified</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -3,6 +3,7 @@
 import json
 import math
 import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
@@ -45,15 +46,22 @@ class PaperSearchTool(BaseTool):
         papers = []
         errors = []
 
-        for name, search_fn in (
+        sources = (
             ("Crossref", search_crossref),
             ("OpenAlex", search_openalex),
             ("Semantic Scholar", search_semantic_scholar),
-        ):
-            try:
-                papers.extend(search_fn(query, limit=limit))
-            except Exception as exc:
-                errors.append(f"{name} error: {exc}")
+        )
+        with ThreadPoolExecutor(max_workers=len(sources)) as executor:
+            searches = {
+                executor.submit(search_fn, query, limit=limit): name
+                for name, search_fn in sources
+            }
+            for future in as_completed(searches):
+                name = searches[future]
+                try:
+                    papers.extend(future.result())
+                except Exception as exc:
+                    errors.append(f"{name} error: {exc}")
 
         unique = _dedupe_papers(papers)
         eligible = rank_papers(

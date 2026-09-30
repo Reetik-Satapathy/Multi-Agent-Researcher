@@ -36,8 +36,8 @@ report_generation_task:
     Generate a comprehensive research report for: {research_topic}
 
     Using outputs from paper search and research analysis tasks, create a
-    detailed final report. Use the paper_summarizer tool on the most relevant papers
-    before writing when abstracts are available. Do not just repeat the task outputs:
+    detailed final report. Use the supplied abstracts directly and avoid a separate
+    summarization pass unless essential information is missing. Do not just repeat the task outputs:
     synthesize and compare the evidence across papers. Every factual claim about a
     paper must be supported by supplied metadata, its abstract, or its URL. Never
     invent experimental details, datasets, metrics, conclusions, or peer-review status.

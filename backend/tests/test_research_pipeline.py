@@ -1,9 +1,13 @@
+import asyncio
 import json
 import sys
+import tempfile
 import types
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
+
+from fastapi import HTTPException
 
 # The app depends on CrewAI, but that package is not compatible with Python 3.14 in this
 # environment. Stub the minimal CrewAI surface needed for the unit tests so the project logic
@@ -31,6 +35,16 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from knowledge_discovery.models.schemas import Paper
+from knowledge_discovery.api import (
+    PaperSearchRequest,
+    ReportRequest,
+    generate_report,
+    get_current_user,
+    google_login,
+    logout,
+    search_papers,
+)
+from starlette.requests import Request
 from knowledge_discovery.tools.analysis_tools import (
     NoveltyAnalysisTool,
     compute_novelty_score,
@@ -44,10 +58,185 @@ from knowledge_discovery.tools.search_tools import PaperSearchTool, _dedupe_pape
 
 
 class ResearchPipelineTests(unittest.TestCase):
+    def test_google_login_requires_oauth_configuration(self):
+        scope = {
+            "type": "http",
+            "method": "GET",
+            "path": "/api/auth/google/login",
+            "headers": [],
+            "query_string": b"",
+            "session": {},
+        }
+        with patch("knowledge_discovery.api.google_enabled", False):
+            with self.assertRaises(HTTPException) as raised:
+                asyncio.run(google_login(Request(scope), "http://localhost:5173"))
+        self.assertEqual(raised.exception.status_code, 503)
+
+    def test_google_login_rejects_untrusted_frontend_origin(self):
+        scope = {
+            "type": "http",
+            "method": "GET",
+            "path": "/api/auth/google/login",
+            "headers": [],
+            "query_string": b"",
+            "session": {},
+        }
+        with patch("knowledge_discovery.api.google_enabled", True):
+            with self.assertRaises(HTTPException) as raised:
+                asyncio.run(google_login(Request(scope), "https://example.invalid"))
+        self.assertEqual(raised.exception.status_code, 400)
+
+    def test_auth_session_reports_user_and_clears_on_logout(self):
+        scope = {
+            "type": "http",
+            "method": "POST",
+            "path": "/api/auth/logout",
+            "headers": [],
+            "query_string": b"",
+            "session": {
+                "google_user": {
+                    "name": "Research User",
+                    "email": "user@example.com",
+                }
+            },
+        }
+        request = Request(scope)
+
+        session = asyncio.run(get_current_user(request))
+        self.assertEqual(session["user"]["name"], "Research User")
+        self.assertEqual(session["user"]["email"], "user@example.com")
+
+        result = asyncio.run(logout(request))
+        self.assertEqual(result, {"logged_out": True})
+        self.assertEqual(request.session, {})
+
+    def test_novelty_analysis_accepts_list_and_object_paper_inputs(self):
+        tool = NoveltyAnalysisTool()
+        papers = [{"title": "Federated learning for medical imaging", "abstract": "Privacy preserving learning."}]
+
+        list_result = json.loads(tool._run("federated learning medical imaging", json.dumps(papers)))
+        object_result = json.loads(
+            tool._run("federated learning medical imaging", json.dumps({"papers": papers}))
+        )
+
+        self.assertEqual(list_result["similar_papers"], object_result["similar_papers"])
+        self.assertEqual(list_result["novelty_score"], object_result["novelty_score"])
+
+    def test_novelty_analysis_rejects_invalid_paper_shapes(self):
+        with self.assertRaisesRegex(ValueError, "JSON object or array"):
+            NoveltyAnalysisTool()._run("research topic", json.dumps("invalid shape"))
+
+        with self.assertRaisesRegex(ValueError, "list of paper objects"):
+            NoveltyAnalysisTool()._run("research topic", json.dumps({"papers": ["not a paper"]}))
+
+    def test_report_api_runs_direct_search_analysis_and_one_writer_call(self):
+        paper_results = {
+            "query": "federated learning medical imaging",
+            "count": 1,
+            "papers": [{"title": "Verified paper", "peer_review_status": "verified"}],
+            "warnings": [],
+        }
+        analysis = {"novelty_score": 70, "similar_papers": [], "research_gaps": []}
+        writer = types.SimpleNamespace(
+            call=Mock(return_value="# Research Report\n\n## 1. Executive Summary")
+        )
+        with tempfile.TemporaryDirectory() as temp_dir, patch(
+            "knowledge_discovery.tools.search_tools.PaperSearchTool._run",
+            return_value=json.dumps(paper_results),
+        ) as search, patch(
+            "knowledge_discovery.tools.analysis_tools.NoveltyAnalysisTool._run",
+            return_value=json.dumps(analysis),
+        ) as analyze, patch(
+            "knowledge_discovery.utils.llm.get_llm",
+            return_value=writer,
+        ), patch("knowledge_discovery.api.OUTPUT_ROOT", Path(temp_dir)):
+            response = generate_report(ReportRequest(topic="federated learning medical imaging"))
+            self.assertEqual(response["markdown"], "# Research Report\n\n## 1. Executive Summary")
+            search.assert_called_once_with("federated learning medical imaging", limit=10)
+            analyze.assert_called_once()
+            writer.call.assert_called_once()
+            prompt = writer.call.call_args.args[0][0]["content"]
+            for section in (
+                "## 1. Executive Summary",
+                "## 4. Related Papers",
+                "## 5. Comparative Analysis",
+                "## 10. References",
+                "Preserve the requested level of detail and length.",
+            ):
+                self.assertIn(section, prompt)
+            self.assertTrue((Path(temp_dir) / "papers.json").exists())
+            self.assertTrue((Path(temp_dir) / "analysis.json").exists())
+            self.assertEqual(
+                (Path(temp_dir) / "research_report.md").read_text(encoding="utf-8"),
+                response["markdown"],
+            )
+
+    def test_search_api_returns_all_available_papers_below_requested_count(self):
+        available_papers = [{"title": f"Available paper {index}"} for index in range(3)]
+        for topic, requested_count in (
+            ("short query", 10),
+            ("medium query", 15),
+            ("common topic", 20),
+            ("broad subject", 25),
+        ):
+            with self.subTest(topic=topic, requested_count=requested_count), patch(
+                "knowledge_discovery.tools.search_tools.PaperSearchTool._run",
+                return_value=json.dumps({"papers": available_papers, "count": 3}),
+            ):
+                result = search_papers(
+                    PaperSearchRequest(topic=topic, count=requested_count)
+                )
+
+            self.assertEqual(result["papers"], available_papers)
+            self.assertEqual(result["count"], 3)
+            self.assertEqual(result["requested_count"], requested_count)
+
+    def test_search_api_caps_results_at_requested_count(self):
+        available_papers = [{"title": f"Paper {index}"} for index in range(30)]
+        with patch(
+            "knowledge_discovery.tools.search_tools.PaperSearchTool._run",
+            return_value=json.dumps({"papers": available_papers, "count": 30}),
+        ):
+            result = search_papers(PaperSearchRequest(topic="broad research", count=10))
+
+        self.assertEqual(len(result["papers"]), 10)
+        self.assertEqual(result["count"], 10)
+        self.assertEqual(result["requested_count"], 10)
+
+    def test_paper_search_returns_partial_results_when_provider_fails(self):
+        available = Paper(
+            title="Verified paper",
+            year=2024,
+            citation_count=5,
+            source="Crossref",
+            url="https://doi.org/10.1000/available",
+            publication_type="journal-article",
+            venue="Journal",
+            peer_review_status="verified",
+        )
+        with patch(
+            "knowledge_discovery.tools.search_tools.search_crossref",
+            return_value=[available],
+        ), patch(
+            "knowledge_discovery.tools.search_tools.search_openalex",
+            side_effect=TimeoutError("provider timed out"),
+        ), patch(
+            "knowledge_discovery.tools.search_tools.search_semantic_scholar",
+            return_value=[],
+        ):
+            result = json.loads(PaperSearchTool()._run("research topic", limit=20))
+
+        self.assertEqual(result["count"], 1)
+        self.assertEqual(result["papers"][0]["title"], "Verified paper")
+        self.assertTrue(any("OpenAlex error" in warning for warning in result["warnings"]))
+
     def test_paper_search_keeps_only_verified_papers_and_formats(self):
         with patch("knowledge_discovery.tools.search_tools.search_crossref") as mock_crossref, patch(
             "knowledge_discovery.tools.search_tools.search_openalex"
-        ) as mock_openalex:
+        ) as mock_openalex, patch(
+            "knowledge_discovery.tools.search_tools.search_semantic_scholar",
+            return_value=[],
+        ):
             mock_crossref.return_value = [
                 Paper(
                     title="Crop disease detection using drones",
@@ -88,7 +277,10 @@ class ResearchPipelineTests(unittest.TestCase):
     def test_paper_search_ranks_by_citations_then_recency(self):
         with patch("knowledge_discovery.tools.search_tools.search_crossref") as mock_crossref, patch(
             "knowledge_discovery.tools.search_tools.search_openalex"
-        ) as mock_openalex:
+        ) as mock_openalex, patch(
+            "knowledge_discovery.tools.search_tools.search_semantic_scholar",
+            return_value=[],
+        ):
             mock_crossref.return_value = [
                 Paper(
                     title="Recent low-impact paper",
