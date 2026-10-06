@@ -15,10 +15,6 @@ export function TopBar({ activeTab, setActiveTab, savedCount, onOpenMobileNav }:
         return 'Discover Papers';
       case 'my-research':
         return 'My Research';
-      case 'projects':
-        return 'Projects';
-      case 'saved':
-        return 'Saved Papers';
       case 'compare':
         return 'Compare Papers';
       case 'reports':
@@ -63,7 +59,7 @@ export function TopBar({ activeTab, setActiveTab, savedCount, onOpenMobileNav }:
         </button>
         <button
           type="button"
-          onClick={() => setActiveTab('saved')}
+          onClick={() => setActiveTab('my-research')}
           className="flex items-center gap-1.5 rounded-xl border border-[#D9D7D0] bg-white px-3 py-1.5 text-[13px] text-[#171717] transition-colors duration-200 hover:border-[#1D4ED8]/40"
         >
           <Bookmark className="h-4 w-4 text-[#1D4ED8]" />

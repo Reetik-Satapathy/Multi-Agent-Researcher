@@ -12,13 +12,12 @@ import { MyResearchView } from './views/MyResearchView';
 import { ProfileView } from './views/ProfileView';
 import { DocumentChatView } from './views/DocumentChatView';
 
-import { MOCK_PAPERS, MOCK_PROJECTS, MOCK_REPORTS, INITIAL_USER } from './data/mockData';
-import type { Paper, Project, ResearchReport } from './types/research';
-import { workspaceService } from './services/workspaceService';
+import { MOCK_PAPERS, MOCK_REPORTS, INITIAL_USER } from './data/mockData';
+import type { Paper, ResearchReport } from './types/research';
 import { useLocalStorageState } from './hooks/useLocalStorageState';
 import { authService, type GoogleUser } from './services/authService';
 
-const RESEARCH_SECTIONS: ActiveTab[] = ['my-research', 'projects', 'saved'];
+const RESEARCH_SECTIONS: ActiveTab[] = ['my-research'];
 
 export function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('discover');
@@ -37,7 +36,6 @@ export function App() {
     'saved-papers-v1',
     MOCK_PAPERS.filter((paper) => paper.isSaved),
   );
-  const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS);
   const [reports, setReports] = useLocalStorageState<ResearchReport[]>('generated-reports-v1', MOCK_REPORTS);
   const userProfile = INITIAL_USER;
 
@@ -143,20 +141,7 @@ export function App() {
     setSelectedReport(updatedReport);
   };
 
-  const handleOpenProject = (_project: Project) => {
-    setActiveTab('projects');
-  };
-
-  const handleCreateNewProject = () => {
-    const title = prompt('Enter new project title:', 'Neuro-Symbolic Reasoning');
-    if (title) {
-      workspaceService.createProject(title, 'Custom research workspace folder.', ['AI', 'Research']);
-      setProjects([...workspaceService.getProjects()]);
-    }
-  };
-
   const savedPapersList = savedPapers;
-  const researchSection = activeTab === 'saved' ? 'saved' : 'projects';
 
   return (
     <div className="flex min-h-screen overflow-x-hidden bg-[#F5F3EE] font-sans text-[#171717]">
@@ -259,18 +244,14 @@ export function App() {
           {RESEARCH_SECTIONS.includes(activeTab) && (
             <PageContainer>
               <MyResearchView
-                projects={projects}
                 savedPapers={savedPapersList}
                 reports={reports}
-                onOpenProject={handleOpenProject}
                 onOpenPaper={handleOpenPaper}
                 onSummarizePaper={handleSummarizePaper}
                 onCompareToggle={handleCompareToggle}
                 onSaveToggle={handleSaveToggle}
                 onOpenReport={handleOpenReport}
-                onNewProject={handleCreateNewProject}
                 comparedPapers={comparedPapers}
-                initialSection={researchSection}
               />
             </PageContainer>
           )}

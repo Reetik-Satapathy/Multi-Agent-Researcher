@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { CheckCircle2, Send, Trash2, Upload } from 'lucide-react';
+import { CheckCircle2, LoaderCircle, Trash2, Upload } from 'lucide-react';
 import type { DocumentMetadata } from '../types/research';
 import { documentService, type DocumentChatMessage, type DocumentComparisonResult, type DocumentUploadProgress } from '../services/documentService';
 import { useLocalStorageState } from '../hooks/useLocalStorageState';
+import { DocumentChatInterface } from './DocumentChatInterface';
 
 export function PdfComparisonPanel() {
   const [documents, setDocuments] = useLocalStorageState<Array<DocumentMetadata | null>>('pdf-comparison-documents-v1', [null, null]);
@@ -136,7 +137,8 @@ export function PdfComparisonPanel() {
         </div>
       )}
       {documents[0] && documents[1] && (
-        <button type="button" onClick={() => void compare()} disabled={busy} className="rounded-xl bg-[#1D4ED8] px-4 py-2 text-xs font-semibold text-white disabled:opacity-50">
+        <button type="button" onClick={() => void compare()} disabled={busy} className="inline-flex items-center gap-2 rounded-xl bg-[#1D4ED8] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[#1E40AF] disabled:opacity-50">
+          {busy && <LoaderCircle className="h-3.5 w-3.5 animate-spin" />}
           {busy ? 'Analyzing PDFs...' : 'Compare Uploaded PDFs'}
         </button>
       )}
@@ -178,14 +180,19 @@ function ComparisonResult({ result, messages, question, setQuestion, ask, busy }
           <tbody>{result.comparison.comparison_table.map((row) => <tr key={row.metric} className="border-b border-[#D9D7D0]"><td className="p-3 font-semibold">{row.metric}</td>{['Paper 1', 'Paper 2'].map((paper) => <td key={paper} className="p-3">{row.values?.[paper] || 'Not specified'}</td>)}</tr>)}</tbody>
         </table>
       </div>
-      <div className="rounded-xl border border-[#D9D7D0] p-4">
-        <h4 className="font-bold">Ask about both papers</h4>
-        <div className="mt-3 flex gap-2">
-          <input value={question} onChange={(event) => setQuestion(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void ask(); }} placeholder="Compare the methods or findings..." className="min-w-0 flex-1 rounded-xl border border-[#D9D7D0] px-4 py-2.5 text-sm" />
-          <button type="button" onClick={() => void ask()} disabled={busy || !question.trim()} className="rounded-xl bg-[#1D4ED8] px-4 text-white disabled:opacity-40"><Send className="h-4 w-4" /></button>
-        </div>
-        {messages.length > 0 && <div className="mt-4 space-y-3">{messages.map((message, index) => <div key={`${message.role}-${index}`} className={`rounded-xl p-3 text-sm whitespace-pre-wrap ${message.role === 'user' ? 'border border-[#D9D7D0]' : 'bg-[#DBEAFE]/60'}`}>{message.content}</div>)}</div>}
-      </div>
+      <DocumentChatInterface
+        title="Explore the comparison"
+        description="Ask follow-up questions across both papers"
+        emptyTitle="Dig deeper into the differences"
+        emptyDescription="Ask about methods, findings, trade-offs, or how the papers relate to each other."
+        placeholder="Ask about the methods, findings, or gaps…"
+        activityLabel="Comparing the papers…"
+        messages={messages}
+        question={question}
+        setQuestion={setQuestion}
+        onSubmit={ask}
+        busy={busy}
+      />
     </div>
   );
 }

@@ -1,7 +1,5 @@
 import {
-  Bookmark,
   FileText,
-  FolderKanban,
   GitCompare,
   Library,
   Search,
@@ -23,8 +21,6 @@ export type ActiveTab =
   | 'report-workspace'
   | 'profile'
   | 'settings'
-  | 'projects'
-  | 'saved'
   | 'document-chat';
 
 interface SidebarProps {
@@ -41,16 +37,11 @@ interface SidebarProps {
 }
 
 const MAIN_NAV: Array<{ id: ActiveTab; label: string; icon: typeof Search }> = [
-  { id: 'discover', label: 'Discover Papers', icon: Search },
   { id: 'my-research', label: 'My Research', icon: Library },
+  { id: 'discover', label: 'Discover Papers', icon: Search },
+  { id: 'document-chat', label: 'Ask a PDF', icon: FileText },
   { id: 'compare', label: 'Compare Papers', icon: GitCompare },
   { id: 'reports', label: 'Reports', icon: FileText },
-  { id: 'document-chat', label: 'Ask a PDF', icon: FileText },
-];
-
-const WORKSPACE_NAV: Array<{ id: ActiveTab; label: string; icon: typeof FolderKanban }> = [
-  { id: 'projects', label: 'Projects', icon: FolderKanban },
-  { id: 'saved', label: 'Saved Papers', icon: Bookmark },
 ];
 
 export function Sidebar({
@@ -81,7 +72,7 @@ export function Sidebar({
         onClick={() => go(id)}
         title={collapsed ? label : undefined}
         className={cn(
-          'flex w-full items-center gap-3 rounded-xl px-3 py-2 text-[13px] transition-colors duration-200',
+          'sidebar-nav-item flex w-full items-center gap-3 rounded-xl px-3 py-2 text-[13px] transition-colors duration-200',
           collapsed && 'justify-center px-0',
           active
             ? 'bg-[#1D4ED8]/20 text-[#F5F3EE]'
@@ -146,17 +137,6 @@ export function Sidebar({
           <nav className="space-y-0.5">
             {MAIN_NAV.map((item) => navButton(item.id, item.label, item.icon))}
           </nav>
-
-          <div className="mt-6">
-            {!collapsed && (
-              <p className="mb-2 px-3 text-[10px] font-medium uppercase tracking-[0.16em] text-[#6B6F78]">
-                Workspace
-              </p>
-            )}
-            <nav className="space-y-0.5">
-              {WORKSPACE_NAV.map((item) => navButton(item.id, item.label, item.icon))}
-            </nav>
-          </div>
         </div>
 
         <div className={cn('space-y-2.5 border-t border-white/[0.06] px-3 pb-4 pt-3.5', collapsed && 'px-2')}>

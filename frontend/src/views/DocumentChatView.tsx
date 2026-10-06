@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { FileText, Send, Trash2, Upload } from 'lucide-react';
+import { CheckCircle2, FileText, Trash2, Upload } from 'lucide-react';
 import type { DocumentMetadata, DocumentUploadResult } from '../types/research';
 import { documentService, type DocumentChatMessage, type DocumentUploadProgress } from '../services/documentService';
 import { useLocalStorageState } from '../hooks/useLocalStorageState';
+import { DocumentChatInterface } from '../components/DocumentChatInterface';
 
 export function DocumentChatView() {
   const [document, setDocument] = useLocalStorageState<DocumentUploadResult | null>('document-chat-document-v1', null);
@@ -59,12 +60,12 @@ export function DocumentChatView() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 pb-12">
+    <div className="mx-auto max-w-5xl space-y-6 pb-12">
       <div>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-2xl font-extrabold tracking-tight">Ask a research paper</h2>
-            <p className="mt-1 text-xs text-[#6B6B67]">Upload a selectable-text PDF to extract, summarize, and question it.</p>
+            <p className="mt-1 text-sm text-[#6B6B67]">Upload a paper to explore its summary and ask evidence-based questions.</p>
           </div>
           <button
             type="button"
@@ -77,10 +78,19 @@ export function DocumentChatView() {
           </button>
         </div>
       </div>
-      <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#1D4ED8]/40 bg-white p-10 text-center">
-        <Upload className="h-6 w-6 text-[#1D4ED8]" />
-        <span className="text-sm font-semibold">{busy ? 'Uploading and processing PDF...' : 'Choose a PDF paper'}</span>
-        <span className="text-xs text-[#6B6B67]">Maximum 50 MB; OCR is not configured</span>
+      <label className="group flex cursor-pointer items-center gap-4 rounded-2xl border border-dashed border-[#9CB8F5] bg-gradient-to-r from-[#EEF4FF] to-white p-4 transition hover:border-[#1D4ED8] hover:shadow-sm sm:p-5">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-[#1D4ED8] shadow-sm">
+          {document ? <CheckCircle2 className="h-6 w-6 text-emerald-600" /> : <Upload className="h-6 w-6" />}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-semibold text-[#242424]">
+            {busy ? 'Uploading and processing PDF…' : document ? `Replace ${document.metadata.title || document.metadata.filename}` : 'Choose a PDF paper'}
+          </span>
+          <span className="mt-1 block text-xs text-[#6B6B67]">Selectable-text PDF · Maximum 50 MB · OCR is not configured</span>
+        </span>
+        <span className="hidden shrink-0 rounded-lg border border-[#D9D7D0] bg-white px-3 py-2 text-xs font-semibold text-[#484842] transition group-hover:border-[#1D4ED8]/40 sm:block">
+          Browse files
+        </span>
         <input type="file" accept="application/pdf,.pdf" className="hidden" disabled={busy} onChange={(event) => {
           const file = event.target.files?.[0];
           if (file) void upload(file);
@@ -124,23 +134,38 @@ function DocumentPanel({ metadata, summary, messages, question, setQuestion, ask
   ask: () => void;
   busy: boolean;
 }) {
-  return <div className="space-y-4">
-    <div className="glass-panel rounded-2xl p-5">
-      <div className="flex items-center gap-3"><FileText className="h-5 w-5 text-[#1D4ED8]" /><div><h3 className="font-bold">{metadata.title || metadata.filename}</h3><p className="text-xs text-[#6B6B67]">{metadata.page_count} pages</p></div></div>
-      <p className="mt-4 text-sm leading-relaxed">{String(summary.executive_summary || summary.one_sentence_summary || 'Summary unavailable.')}</p>
-    </div>
-    <div className="glass-panel rounded-2xl p-4">
-      <div className="flex gap-2">
-        <input value={question} onChange={(event) => setQuestion(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void ask(); }} placeholder="Ask a question about the paper..." className="min-w-0 flex-1 rounded-xl border border-[#D9D7D0] bg-white px-4 py-2.5 text-sm outline-none focus:border-[#1D4ED8]" />
-        <button type="button" onClick={() => void ask()} disabled={busy || !question.trim()} className="rounded-xl bg-[#1D4ED8] px-4 text-white disabled:opacity-40"><Send className="h-4 w-4" /></button>
-      </div>
-      {messages.length > 0 && <div className="mt-4 space-y-3">
-        {messages.map((message, index) => (
-          <div key={`${message.role}-${index}`} className={`rounded-xl p-4 text-sm leading-relaxed whitespace-pre-wrap ${message.role === 'user' ? 'bg-white border border-[#D9D7D0]' : 'bg-[#DBEAFE]/60'}`}>
-            {message.content}
+  return (
+    <div className="space-y-5">
+      <section className="overflow-hidden rounded-2xl border border-[#D9D7D0] bg-white shadow-sm">
+        <div className="flex items-center gap-3 border-b border-[#E9E7E1] px-5 py-4">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#DBEAFE] text-[#1D4ED8]">
+            <FileText className="h-5 w-5" />
+          </span>
+          <div className="min-w-0">
+            <h3 className="truncate text-sm font-bold text-[#202020]">{metadata.title || metadata.filename}</h3>
+            <p className="mt-0.5 text-xs text-[#777770]">{metadata.page_count} pages · Ready to discuss</p>
           </div>
-        ))}
-      </div>}
+        </div>
+        <div className="px-5 py-4 sm:px-6">
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#777770]">Paper summary</p>
+          <p className="text-sm leading-7 text-[#373733]">
+            {String(summary.executive_summary || summary.one_sentence_summary || 'Summary unavailable.')}
+          </p>
+        </div>
+      </section>
+      <DocumentChatInterface
+        title="Chat with this paper"
+        description="Ask follow-up questions about the document"
+        emptyTitle="What would you like to understand?"
+        emptyDescription="Ask about the paper’s methods, findings, limitations, or any detail you want to explore."
+        placeholder="Ask a question about this paper…"
+        activityLabel="Reading the paper…"
+        messages={messages}
+        question={question}
+        setQuestion={setQuestion}
+        onSubmit={ask}
+        busy={busy}
+      />
     </div>
-  </div>;
+  );
 }

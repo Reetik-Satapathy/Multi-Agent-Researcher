@@ -37,7 +37,9 @@ if str(SRC) not in sys.path:
 from knowledge_discovery.models.schemas import Paper
 from knowledge_discovery.api import (
     PaperSearchRequest,
+    ReportSectionEditRequest,
     ReportRequest,
+    edit_report_section,
     generate_report,
     get_current_user,
     google_login,
@@ -58,6 +60,94 @@ from knowledge_discovery.tools.search_tools import PaperSearchTool, _dedupe_pape
 
 
 class ResearchPipelineTests(unittest.TestCase):
+    def test_report_section_edit_uses_llm_and_passes_reference_context(self):
+        editor = types.SimpleNamespace(
+            call=Mock(return_value="Revised section with [Author, 2025].")
+        )
+        request = ReportSectionEditRequest(
+            report_title="Research report",
+            section_title="Executive Summary",
+            content="Original report section.",
+            action="improve",
+            reference_context="Author (2025). A verified source.",
+        )
+        with patch(
+            "knowledge_discovery.utils.llm.get_llm",
+            return_value=editor,
+        ):
+            result = edit_report_section(request)
+
+        self.assertEqual(result["content"], "Revised section with [Author, 2025].")
+        editor.call.assert_called_once()
+        prompt = editor.call.call_args.args[0][0]["content"]
+        self.assertIn("Improve clarity, grammar, academic tone, and flow", prompt)
+        self.assertIn("Original report section.", prompt)
+        self.assertIn("Author (2025). A verified source.", prompt)
+        self.assertIn("Never invent research findings, data, or sources.", prompt)
+
+    def test_report_section_edit_requires_nonempty_custom_instruction(self):
+        request = ReportSectionEditRequest(
+            report_title="Research report",
+            section_title="Executive Summary",
+            content="Original report section.",
+            action="custom",
+        )
+        with self.assertRaises(HTTPException) as raised:
+            edit_report_section(request)
+        self.assertEqual(raised.exception.status_code, 422)
+
+    def test_report_section_citation_edit_only_uses_supplied_references(self):
+        editor = types.SimpleNamespace(call=Mock(return_value="Revised section."))
+        request = ReportSectionEditRequest(
+            report_title="Research report",
+            section_title="Related Work",
+            content="Original section.",
+            action="citation",
+        )
+        with patch(
+            "knowledge_discovery.utils.llm.get_llm",
+            return_value=editor,
+        ):
+            edit_report_section(request)
+
+        prompt = editor.call.call_args.args[0][0]["content"]
+        self.assertIn("using only works present in the supplied reference context", prompt)
+        self.assertIn("If the reference context contains no relevant source, leave the content unchanged.", prompt)
+
+    def test_report_section_custom_edit_includes_user_instruction(self):
+        editor = types.SimpleNamespace(call=Mock(return_value="Revised section."))
+        request = ReportSectionEditRequest(
+            report_title="Research report",
+            section_title="Discussion",
+            content="Original section.",
+            action="custom",
+            custom_prompt="Rewrite this in concise academic language.",
+        )
+        with patch(
+            "knowledge_discovery.utils.llm.get_llm",
+            return_value=editor,
+        ):
+            edit_report_section(request)
+
+        prompt = editor.call.call_args.args[0][0]["content"]
+        self.assertIn("Rewrite this in concise academic language.", prompt)
+
+    def test_report_section_edit_rejects_empty_llm_result(self):
+        editor = types.SimpleNamespace(call=Mock(return_value="  "))
+        request = ReportSectionEditRequest(
+            report_title="Research report",
+            section_title="Executive Summary",
+            content="Original report section.",
+            action="shorten",
+        )
+        with patch(
+            "knowledge_discovery.utils.llm.get_llm",
+            return_value=editor,
+        ):
+            with self.assertRaises(HTTPException) as raised:
+                edit_report_section(request)
+        self.assertEqual(raised.exception.status_code, 502)
+
     def test_google_login_requires_oauth_configuration(self):
         scope = {
             "type": "http",

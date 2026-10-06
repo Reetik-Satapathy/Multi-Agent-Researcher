@@ -3,6 +3,8 @@ import { parseReportMarkdown } from './reportMarkdown';
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
 
+export type ReportEditAction = 'improve' | 'shorten' | 'expand' | 'citation' | 'custom';
+
 export const aiService = {
   async generateResearchReport(topic: string): Promise<ResearchReport> {
     const response = await fetch(`${API_BASE_URL}/api/research/report`, {
@@ -26,6 +28,38 @@ export const aiService = {
     };
 
   },
+
+  async editReportSection(input: {
+    reportTitle: string;
+    sectionTitle: string;
+    content: string;
+    action: ReportEditAction;
+    customPrompt?: string;
+    referenceContext?: string;
+  }): Promise<string> {
+    const response = await fetch(`${API_BASE_URL}/api/research/report/edit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        report_title: input.reportTitle,
+        section_title: input.sectionTitle,
+        content: input.content,
+        action: input.action,
+        custom_prompt: input.customPrompt || '',
+        reference_context: input.referenceContext || '',
+      }),
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => null) as { detail?: string } | null;
+      throw new Error(body?.detail || `Report edit failed (${response.status}).`);
+    }
+    const data = await response.json() as { content: string };
+    if (typeof data.content !== 'string' || !data.content.trim()) {
+      throw new Error('The report editor returned an empty section.');
+    }
+    return data.content;
+  },
+
   // Generate structured AI summary for a paper
   async generateSummary(paper: Paper): Promise<PaperSummary> {
     await new Promise((resolve) => setTimeout(resolve, 800));
