@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Sidebar, type ActiveTab } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 import { PageContainer } from './components/PageContainer';
-import { HomeView } from './views/HomeView';
+import { LandingPage } from './views/LandingPage';
 import { DiscoverPapersView } from './views/DiscoverPapersView';
 import { PaperDetailView } from './views/PaperDetailView';
 import { AISummaryView } from './views/AISummaryView';
@@ -144,9 +144,13 @@ export function App() {
 
   const savedPapersList = savedPapers;
   const isHome = activeTab === 'home';
+  const handleStartResearch = () => {
+    window.scrollTo(0, 0);
+    setActiveTab('discover');
+  };
 
   return (
-    <div className={`relative overflow-x-clip bg-[#070807] font-sans text-[#F5F7F3] ${isHome ? 'h-svh overflow-hidden bg-[#050706]' : 'min-h-screen'}`}>
+    <div className={`relative overflow-x-clip bg-[#070807] font-sans text-[#F5F7F3] ${isHome ? 'min-h-screen bg-[#050706]' : 'min-h-screen'}`}>
       {/* Background Liquid/Crystal Atmosphere */}
       <div 
         className="pointer-events-none fixed inset-0 z-0 opacity-40"
@@ -163,9 +167,7 @@ export function App() {
 
       {/* When on Home Screen: Full-Screen Minimalist Screen Without Sidebar & TopBar */}
       {isHome ? (
-        <main className="relative z-10 h-svh w-full overflow-hidden">
-          <HomeView onEnterWorkspace={() => setActiveTab('discover')} />
-        </main>
+        <LandingPage onStartResearch={handleStartResearch} />
       ) : (
         /* Application Shell (Sidebar + TopBar + Main View) */
         <div className="flex min-h-screen w-full">
@@ -296,7 +298,7 @@ export function App() {
         </div>
       )}
 
-      {authError && (googleUser || loginPromptDismissed) && (
+      {!isHome && authError && (googleUser || loginPromptDismissed) && (
         <div
           role="alert"
           className="fixed bottom-4 right-4 z-[110] flex max-w-lg items-center gap-4 rounded-xl border border-red-500/20 bg-[#101512] px-4 py-3 text-xs text-red-400 shadow-lg"
@@ -312,7 +314,7 @@ export function App() {
         </div>
       )}
 
-      {!authLoading && !googleUser && !loginPromptDismissed && (
+      {!isHome && !authLoading && !googleUser && !loginPromptDismissed && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
           <section
             role="dialog"
