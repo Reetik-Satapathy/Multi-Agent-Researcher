@@ -34,58 +34,58 @@ export function ReportGeneratorView({ reports, onReportGenerated, onOpenReport }
   };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8 pb-12">
+    <div className="mx-auto max-w-3xl space-y-8 pb-16">
       <div>
-        <div className="mb-1 flex items-center space-x-2 text-xs font-mono uppercase tracking-wider text-[#1D4ED8]">
-          <Sparkles className="h-4 w-4" />
-          <span>AI Report Generator</span>
+        <div className="mb-1.5 flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#6F9B83]">
+          <Sparkles className="h-3.5 w-3.5" />
+          <span>AI Report Engine</span>
         </div>
-        <h2 className="text-2xl font-extrabold tracking-tight">Generate Research Report</h2>
-        <p className="mt-1 text-xs text-[#6B6B67]">
-          Enter a research topic. The full research crew will find papers, analyze the field, and write a report.
+        <h2 className="text-2xl font-bold tracking-tight text-[#F5F7F3]">Generate Research Report</h2>
+        <p className="mt-1 text-xs text-[#A5ADA7]">
+          Enter a research topic to synthesize literature, extract methodology, and generate a structured paper.
         </p>
       </div>
 
       {generating ? (
         <LoadingState
-          message="AI Agents Writing & Structuring Academic Report..."
-          subMessage="The full crew is searching papers, analyzing research, and generating your report."
+          message="AI Agents Synthesizing Research & Writing Report..."
+          subMessage="Searching papers, analyzing literature, and structuring sections..."
         />
       ) : (
         <form onSubmit={handleGenerate} className="space-y-4">
-          <div className="glass-panel space-y-3 rounded-2xl p-6">
-            <label htmlFor="report-topic" className="block text-sm font-bold">
-              Research topic
+          <div className="space-y-3 rounded-xl border border-white/[0.08] bg-[#101512] p-6">
+            <label htmlFor="report-topic" className="block text-xs font-semibold uppercase tracking-wider text-[#6F9B83]">
+              Research Topic or Question
             </label>
             <input
               id="report-topic"
               value={topic}
               onChange={(event) => setTopic(event.target.value)}
-              placeholder="e.g. Federated learning for medical imaging"
+              placeholder="e.g. Federated learning for privacy-preserving medical imaging"
               required
               minLength={2}
               maxLength={500}
-              className="w-full rounded-xl border border-[#D9D7D0] bg-white px-4 py-3 text-sm outline-none focus:border-[#1D4ED8]"
+              className="w-full rounded-lg border border-white/[0.08] bg-[#0C100E] px-4 py-3 text-sm text-[#F5F7F3] placeholder-[#737B76] outline-none focus:border-[#6F9B83]"
             />
           </div>
-          {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+          {error && <p role="alert" className="rounded-xl border border-red-500/20 bg-red-950/20 p-3 text-xs text-red-300">{error}</p>}
           <button
             type="submit"
             disabled={!topic.trim()}
-            className="flex w-full items-center justify-center space-x-2 rounded-2xl bg-[#1D4ED8] py-4 text-base font-bold text-white shadow-glow-purple-lg transition-all hover:opacity-95 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#315C4B] py-3.5 text-xs font-semibold text-[#F5F7F3] transition-colors hover:bg-[#3D705C] disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <Sparkles className="h-5 w-5" />
+            <Sparkles className="h-4 w-4" />
             <span>Generate Research Report</span>
-            <ArrowRight className="ml-1 h-5 w-5" />
+            <ArrowRight className="h-4 w-4" />
           </button>
         </form>
       )}
 
       {reports.length > 0 && (
-        <section className="space-y-3" aria-labelledby="saved-reports-heading">
+        <section className="space-y-3 pt-4 border-t border-white/[0.08]" aria-labelledby="saved-reports-heading">
           <div>
-            <h3 id="saved-reports-heading" className="text-lg font-bold">Your saved reports</h3>
-            <p className="mt-1 text-xs text-[#6B6B67]">Open a generated report to continue reading or editing it.</p>
+            <h3 id="saved-reports-heading" className="text-sm font-semibold text-[#F5F7F3]">Saved Reports</h3>
+            <p className="mt-0.5 text-xs text-[#A5ADA7]">Open a generated report to continue reading or editing.</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {reports.map((report) => (
@@ -93,12 +93,12 @@ export function ReportGeneratorView({ reports, onReportGenerated, onOpenReport }
                 key={report.id}
                 type="button"
                 onClick={() => onOpenReport(report)}
-                className="glass-panel glass-panel-hover flex items-start gap-3 rounded-2xl p-4 text-left"
+                className="flex items-start gap-3 rounded-xl border border-white/[0.08] bg-[#101512] p-4 text-left transition-colors hover:border-[#6F9B83]/30 hover:bg-[#141B17]"
               >
-                <FileText className="mt-0.5 h-5 w-5 shrink-0 text-[#1D4ED8]" />
+                <FileText className="mt-0.5 h-4 w-4 shrink-0 text-[#6F9B83]" />
                 <span className="min-w-0">
-                  <span className="block font-semibold text-[#171717]">{report.title}</span>
-                  <span className="mt-1 block text-xs text-[#6B6B67]">
+                  <span className="block text-xs font-semibold text-[#F5F7F3] truncate">{report.title}</span>
+                  <span className="mt-1 block font-mono text-[11px] text-[#737B76]">
                     {report.date} · {report.wordCount} words · {report.sections.length} sections
                   </span>
                 </span>

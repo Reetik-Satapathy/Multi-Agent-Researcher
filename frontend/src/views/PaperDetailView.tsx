@@ -100,133 +100,136 @@ export const PaperDetailView: React.FC<PaperDetailViewProps> = ({
   ];
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* Top Header & Navigation */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#D9D7D0] pb-4">
+    <div className="mx-auto max-w-5xl space-y-6 pb-16">
+      {/* Navigation & Action Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
         <button
+          type="button"
           onClick={onBack}
-          className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-black/5 hover:bg-black/[0.04] text-xs font-semibold text-[#171717] transition-colors"
+          className="flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-[#0C100E] px-3 py-1.5 text-xs text-[#A5ADA7] transition-colors hover:border-white/[0.16] hover:text-[#F5F7F3]"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="h-3.5 w-3.5" />
           <span>Back to Papers</span>
         </button>
 
-        {/* Actions Bar */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={() => onSaveToggle(paper)}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors ${
               isSaved
-                ? 'bg-[#DBEAFE] text-[#1D4ED8] border-[#1D4ED8]/40 shadow-glow-purple'
-                : 'bg-black/5 text-[#6B6B67] border-[#D9D7D0] hover:text-[#171717]'
+                ? 'border-[#6F9B83]/40 bg-[#16231D] text-[#F5F7F3]'
+                : 'border-white/[0.08] bg-[#0C100E] text-[#A5ADA7] hover:border-white/[0.16] hover:text-[#F5F7F3]'
             }`}
           >
-            <Bookmark className="w-3.5 h-3.5" />
+            <Bookmark className="h-3.5 w-3.5 text-[#6F9B83]" />
             <span>{isSaved ? 'Saved' : 'Save'}</span>
           </button>
 
           <button
+            type="button"
             onClick={() => onCompareToggle(paper)}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors ${
               isCompared
-                ? 'bg-emerald-600/10 text-emerald-600 border-emerald-600/30'
-                : 'bg-black/5 text-[#6B6B67] border-[#D9D7D0] hover:text-[#171717]'
+                ? 'border-[#6F9B83]/40 bg-[#16231D] text-[#F5F7F3]'
+                : 'border-white/[0.08] bg-[#0C100E] text-[#A5ADA7] hover:border-white/[0.16] hover:text-[#F5F7F3]'
             }`}
           >
-            <GitCompare className="w-3.5 h-3.5" />
+            <GitCompare className="h-3.5 w-3.5 text-[#6F9B83]" />
             <span>{isCompared ? 'In Compare' : 'Compare'}</span>
           </button>
 
           <button
+            type="button"
             onClick={() => onSummarize(paper)}
-            className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-[#DBEAFE] border border-[#1D4ED8]/40 text-xs font-semibold text-[#1D4ED8] shadow-glow-purple hover:bg-[#DBEAFE]/70 transition-all"
+            className="flex items-center gap-1.5 rounded-lg border border-[#6F9B83]/30 bg-[#16231D]/60 px-3 py-1.5 text-xs text-[#6F9B83] transition-colors hover:bg-[#315C4B]/30 hover:text-[#F5F7F3]"
           >
-            <Sparkles className="w-3.5 h-3.5" />
+            <Sparkles className="h-3.5 w-3.5 text-[#6F9B83]" />
             <span>AI Summary</span>
           </button>
 
           <button
+            type="button"
             onClick={() => onGenerateReport([paper])}
-            className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#1D4ED8] to-[#1D4ED8] text-white text-xs font-semibold shadow-glow-purple hover:opacity-95 transition-all"
+            className="flex items-center gap-1.5 rounded-lg bg-[#315C4B] px-3 py-1.5 text-xs font-semibold text-[#F5F7F3] transition-colors hover:bg-[#3D705C]"
           >
-            <FileText className="w-3.5 h-3.5" />
+            <FileText className="h-3.5 w-3.5" />
             <span>Generate Report</span>
           </button>
         </div>
       </div>
 
-      {/* Main Grid: Left/Center Content + Right AI Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* LEFT / CENTER: Paper Content */}
+      {/* Main Column Layout: Reading View + Right AI Panel */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Academic Reading Column (2 Cols) */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Title & Metadata Header */}
-          <div className="glass-panel rounded-2xl p-6 space-y-4">
-            <h1 className="text-2xl md:text-3xl font-extrabold text-[#171717] tracking-tight leading-snug">
+          <div className="rounded-xl border border-white/[0.08] bg-[#101512] p-6 space-y-4">
+            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-[#F5F7F3] leading-snug">
               {paper.title}
             </h1>
 
-            <p className="text-xs text-[#6B6B67] font-medium leading-relaxed">
-              <span className="text-[#171717] font-semibold">Authors:</span> {paper.authors.join(', ')}
+            <p className="text-xs text-[#A5ADA7]">
+              <span className="text-[#F5F7F3] font-medium">Authors:</span> {paper.authors.join(', ')}
             </p>
 
             <PaperMetadata paper={paper} />
 
-            <div className="flex items-center space-x-3 pt-2">
+            <div className="flex items-center gap-4 pt-2 text-xs font-mono text-[#6F9B83]">
               <a
                 href={paper.url}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center space-x-1.5 text-xs text-[#1D4ED8] hover:underline font-mono"
+                className="flex items-center gap-1 hover:underline"
               >
                 <span>DOI: {paper.doi}</span>
-                <ExternalLink className="w-3 h-3" />
+                <ExternalLink className="h-3 w-3" />
               </a>
 
               <a
                 href={paper.url}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center space-x-1 text-xs text-[#1D4ED8] hover:underline font-mono"
+                className="flex items-center gap-1 hover:underline"
               >
-                <Download className="w-3 h-3" />
-                <span>PDF Download</span>
+                <Download className="h-3 w-3" />
+                <span>Download PDF</span>
               </a>
             </div>
           </div>
 
           {/* Abstract */}
-          <div className="glass-panel rounded-2xl p-6 space-y-3">
-            <h3 className="text-sm font-mono uppercase text-[#1D4ED8] tracking-wider font-semibold">
+          <div className="rounded-xl border border-white/[0.08] bg-[#101512] p-6 space-y-3">
+            <h3 className="text-xs font-mono uppercase tracking-wider text-[#6F9B83] font-semibold">
               Abstract
             </h3>
-            <p className="text-sm text-[#171717] leading-relaxed font-sans">
+            <p className="text-xs sm:text-sm text-[#F5F7F3] leading-relaxed">
               {paper.abstract}
             </p>
           </div>
 
           {/* Methodology */}
-          <div className="glass-panel rounded-2xl p-6 space-y-3">
-            <h3 className="text-sm font-mono uppercase text-[#1D4ED8] tracking-wider font-semibold">
+          <div className="rounded-xl border border-white/[0.08] bg-[#101512] p-6 space-y-3">
+            <h3 className="text-xs font-mono uppercase tracking-wider text-[#6F9B83] font-semibold">
               Methodology & Architecture
             </h3>
-            <p className="text-sm text-[#6B6B67] leading-relaxed">
+            <p className="text-xs sm:text-sm text-[#A5ADA7] leading-relaxed">
               {paper.methodology || 'The authors propose a multi-scale transformer architecture with automated verification loops.'}
             </p>
           </div>
 
-          {/* Key Findings */}
-          <div className="glass-panel rounded-2xl p-6 space-y-3">
-            <h3 className="text-sm font-mono uppercase text-[#1D4ED8] tracking-wider font-semibold">
+          {/* Key Empirical Findings */}
+          <div className="rounded-xl border border-white/[0.08] bg-[#101512] p-6 space-y-3">
+            <h3 className="text-xs font-mono uppercase tracking-wider text-[#6F9B83] font-semibold">
               Key Empirical Findings
             </h3>
-            <ul className="space-y-2 text-sm text-[#171717]">
+            <ul className="space-y-2 text-xs sm:text-sm text-[#F5F7F3]">
               {(paper.keyFindings || [
                 'Demonstrates state-of-the-art accuracy across major public benchmarks.',
                 'Reduces false negative diagnostic errors by 31%.',
                 'Operates in real-time with sub-5ms inference latency.'
               ]).map((finding, idx) => (
-                <li key={idx} className="flex items-start space-x-2">
-                  <span className="text-[#1D4ED8] font-bold">•</span>
+                <li key={idx} className="flex items-start gap-2">
+                  <span className="text-[#6F9B83]">•</span>
                   <span>{finding}</span>
                 </li>
               ))}
@@ -234,17 +237,17 @@ export const PaperDetailView: React.FC<PaperDetailViewProps> = ({
           </div>
 
           {/* Limitations */}
-          <div className="glass-panel rounded-2xl p-6 space-y-3">
-            <h3 className="text-sm font-mono uppercase text-[#1D4ED8] tracking-wider font-semibold">
+          <div className="rounded-xl border border-white/[0.08] bg-[#101512] p-6 space-y-3">
+            <h3 className="text-xs font-mono uppercase tracking-wider text-[#B89B62] font-semibold">
               Limitations & Constraints
             </h3>
-            <ul className="space-y-2 text-sm text-[#6B6B67]">
+            <ul className="space-y-2 text-xs sm:text-sm text-[#A5ADA7]">
               {(paper.limitations || [
                 'Requires consistent hardware calibration across medical centers.',
                 'High initial GPU memory consumption during slide graph construction.'
               ]).map((limitation, idx) => (
-                <li key={idx} className="flex items-start space-x-2">
-                  <span className="text-[#1D4ED8] font-bold">•</span>
+                <li key={idx} className="flex items-start gap-2">
+                  <span className="text-[#B89B62]">•</span>
                   <span>{limitation}</span>
                 </li>
               ))}
@@ -252,48 +255,44 @@ export const PaperDetailView: React.FC<PaperDetailViewProps> = ({
           </div>
         </div>
 
-        {/* RIGHT: AI Research Assistant Panel */}
+        {/* Right AI Assistant Panel */}
         <div className="space-y-4">
-          <div className="glass-panel rounded-2xl p-5 border border-[#1D4ED8]/40 shadow-glow-purple flex flex-col h-[600px] sticky top-20">
-            {/* AI Assistant Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-[#D9D7D0]">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 rounded-lg bg-[#DBEAFE] border border-[#1D4ED8]/50 flex items-center justify-center text-[#1D4ED8]">
-                  <Sparkles className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-[#171717] tracking-tight">AI Assistant</h3>
-                  <span className="text-[10px] font-mono text-[#1D4ED8]">Paper Copilot</span>
-                </div>
+          <div className="sticky top-20 flex flex-col h-[580px] rounded-xl border border-white/[0.08] bg-[#101512] p-4 space-y-3">
+            <div className="flex items-center gap-2 border-b border-white/[0.06] pb-3">
+              <Sparkles className="h-4 w-4 text-[#6F9B83]" />
+              <div>
+                <h3 className="text-xs font-bold text-[#F5F7F3]">AI Assistant</h3>
+                <span className="text-[10px] font-mono text-[#737B76]">Paper Reader Copilot</span>
               </div>
             </div>
 
-            {/* Quick Action Chips */}
-            <div className="py-3 flex flex-wrap gap-1.5 border-b border-[#D9D7D0]">
+            {/* Quick Prompts */}
+            <div className="flex flex-wrap gap-1 border-b border-white/[0.06] pb-3">
               {quickPrompts.map((prompt, idx) => (
                 <button
                   key={idx}
+                  type="button"
                   onClick={() => handleSendPrompt(prompt.replace('✦ ', ''))}
                   disabled={loadingAi}
-                  className="px-2.5 py-1 rounded-lg bg-[#DBEAFE] hover:bg-[#DBEAFE]/70 border border-[#1D4ED8]/30 text-[11px] text-[#1D4ED8] font-medium transition-all"
+                  className="rounded-md border border-white/[0.08] bg-[#0C100E] px-2 py-1 text-[11px] text-[#A5ADA7] transition-colors hover:border-[#6F9B83]/30 hover:text-[#F5F7F3]"
                 >
                   {prompt}
                 </button>
               ))}
             </div>
 
-            {/* Chat Messages */}
-            <div className="flex-1 overflow-y-auto py-3 space-y-3 pr-1 text-xs">
+            {/* Messages Stream */}
+            <div className="flex-1 overflow-y-auto space-y-2 text-xs pr-1">
               {messages.map((msg, idx) => (
                 <div
                   key={idx}
                   className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
                 >
                   <div
-                    className={`p-3 rounded-xl leading-relaxed ${
+                    className={`rounded-lg p-2.5 leading-relaxed ${
                       msg.sender === 'user'
-                        ? 'bg-[#1D4ED8] text-white max-w-[85%]'
-                        : 'bg-[#ECEAE4] text-[#171717] border border-[#D9D7D0] max-w-[90%]'
+                        ? 'bg-[#315C4B] text-[#F5F7F3] max-w-[85%]'
+                        : 'bg-[#0C100E] text-[#F5F7F3] border border-white/[0.06] max-w-[90%]'
                     }`}
                   >
                     {msg.text}
@@ -301,40 +300,37 @@ export const PaperDetailView: React.FC<PaperDetailViewProps> = ({
                 </div>
               ))}
               {loadingAi && (
-                <div className="flex items-center space-x-2 text-xs text-[#1D4ED8] font-mono p-2">
-                  <Sparkles className="w-3.5 h-3.5 animate-spin" />
-                  <span>AI Assistant analyzing paper...</span>
+                <div className="flex items-center gap-2 p-2 text-xs text-[#6F9B83] font-mono">
+                  <Sparkles className="h-3.5 w-3.5 animate-spin" />
+                  <span>Analyzing document...</span>
                 </div>
               )}
             </div>
 
-            <p className="pt-2 text-[10px] text-[#6B6B67]">
-              Answers use this paper&apos;s metadata and abstract; details not present there may be unavailable.
-            </p>
-            {assistantError && <p role="alert" className="mt-2 rounded-lg bg-red-50 p-2 text-xs text-red-700">{assistantError}</p>}
+            {assistantError && <p role="alert" className="text-xs text-red-400 p-1">{assistantError}</p>}
 
-            {/* Chat Input */}
+            {/* Input Form */}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 handleSendPrompt(assistantInput);
               }}
-              className="pt-3 border-t border-[#D9D7D0] flex items-center space-x-2"
+              className="flex items-center gap-2 border-t border-white/[0.06] pt-3"
             >
               <input
                 type="text"
                 value={assistantInput}
                 onChange={(e) => setAssistantInput(e.target.value)}
-                placeholder="Ask AI about this paper..."
+                placeholder="Ask about this paper..."
                 disabled={loadingAi}
-                className="flex-1 bg-white border border-[#D9D7D0] rounded-xl px-3 py-2 text-xs text-[#171717] placeholder-[#8B8F98] focus:outline-none focus:border-[#1D4ED8]"
+                className="flex-1 rounded-lg border border-white/[0.08] bg-[#0C100E] px-3 py-1.5 text-xs text-[#F5F7F3] placeholder-[#737B76] outline-none focus:border-[#6F9B83]"
               />
               <button
                 type="submit"
                 disabled={loadingAi || !assistantInput.trim()}
-                className="p-2 rounded-xl bg-gradient-to-r from-[#1D4ED8] to-[#1D4ED8] text-white shrink-0 shadow-glow-purple hover:opacity-90"
+                className="rounded-lg bg-[#315C4B] p-2 text-[#F5F7F3] hover:bg-[#3D705C] disabled:opacity-40"
               >
-                <Send className="w-3.5 h-3.5" />
+                <Send className="h-3.5 w-3.5" />
               </button>
             </form>
           </div>

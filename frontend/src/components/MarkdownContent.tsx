@@ -11,15 +11,15 @@ function inlineMarkdown(text: string): ReactNode[] {
     const token = match[0];
     const key = `inline-${index}`;
     if (token.startsWith('**') || token.startsWith('__')) {
-      nodes.push(<strong key={key}>{token.slice(2, -2)}</strong>);
+      nodes.push(<strong key={key} className="font-semibold text-[#F5F7F3]">{token.slice(2, -2)}</strong>);
     } else if (token.startsWith('*') || token.startsWith('_')) {
-      nodes.push(<em key={key}>{token.slice(1, -1)}</em>);
+      nodes.push(<em key={key} className="italic text-[#F5F7F3]">{token.slice(1, -1)}</em>);
     } else if (token.startsWith('`')) {
-      nodes.push(<code key={key} className="rounded bg-black/5 px-1 py-0.5">{token.slice(1, -1)}</code>);
+      nodes.push(<code key={key} className="rounded bg-[#16231D] px-1.5 py-0.5 font-mono text-[11px] text-[#6F9B83] border border-white/[0.06]">{token.slice(1, -1)}</code>);
     } else {
       const link = token.match(/^\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)$/);
       if (link) {
-        nodes.push(<a key={key} href={link[2]} target="_blank" rel="noreferrer" className="text-[#1D4ED8] underline">{link[1]}</a>);
+        nodes.push(<a key={key} href={link[2]} target="_blank" rel="noreferrer" className="text-[#6F9B83] underline hover:text-[#F5F7F3]">{link[1]}</a>);
       } else {
         nodes.push(token);
       }
@@ -38,7 +38,12 @@ function tableCells(line: string): string[] {
   return line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((cell) => cell.trim());
 }
 
-export function MarkdownContent({ content }: { content: string }) {
+interface MarkdownContentProps {
+  content: string;
+  className?: string;
+}
+
+export function MarkdownContent({ content, className = '' }: MarkdownContentProps) {
   const lines = content.split(/\r?\n/);
   const blocks: ReactNode[] = [];
   let index = 0;
@@ -54,7 +59,7 @@ export function MarkdownContent({ content }: { content: string }) {
       const level = Math.min(line.match(/^#+/)?.[0].length || 3, 4);
       const title = line.replace(/^#{1,6}\s+/, '');
       const Heading = `h${level}` as 'h1' | 'h2' | 'h3' | 'h4';
-      blocks.push(<Heading key={`heading-${index}`} className="mb-2 mt-5 font-bold">{inlineMarkdown(title)}</Heading>);
+      blocks.push(<Heading key={`heading-${index}`} className="mb-2 mt-4 font-bold text-[#F5F7F3]">{inlineMarkdown(title)}</Heading>);
       index += 1;
       continue;
     }
@@ -68,10 +73,24 @@ export function MarkdownContent({ content }: { content: string }) {
         index += 1;
       }
       blocks.push(
-        <div key={`table-${index}`} className="my-4 overflow-x-auto">
-          <table className="w-full border-collapse text-left text-sm">
-            <thead><tr>{headers.map((cell, cellIndex) => <th key={cellIndex} className="border border-[#D9D7D0] bg-[#F5F3EE] p-2">{inlineMarkdown(cell)}</th>)}</tr></thead>
-            <tbody>{rows.map((row, rowIndex) => <tr key={rowIndex}>{headers.map((_, cellIndex) => <td key={cellIndex} className="border border-[#D9D7D0] p-2 align-top">{inlineMarkdown(row[cellIndex] || '')}</td>)}</tr>)}</tbody>
+        <div key={`table-${index}`} className="my-4 overflow-x-auto rounded-lg border border-white/[0.08]">
+          <table className="w-full border-collapse text-left text-xs">
+            <thead>
+              <tr className="bg-[#0C100E] border-b border-white/[0.08]">
+                {headers.map((cell, cellIndex) => (
+                  <th key={cellIndex} className="p-2.5 font-semibold text-[#6F9B83]">{inlineMarkdown(cell)}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/[0.06]">
+              {rows.map((row, rowIndex) => (
+                <tr key={rowIndex} className="hover:bg-[#141B17]">
+                  {headers.map((_, cellIndex) => (
+                    <td key={cellIndex} className="p-2.5 align-top text-[#F5F7F3]">{inlineMarkdown(row[cellIndex] || '')}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
           </table>
         </div>,
       );
@@ -84,7 +103,11 @@ export function MarkdownContent({ content }: { content: string }) {
         items.push(lines[index].trim().replace(/^[-*+]\s+/, ''));
         index += 1;
       }
-      blocks.push(<ul key={`list-${index}`} className="my-3 list-disc space-y-1 pl-6">{items.map((item, itemIndex) => <li key={itemIndex}>{inlineMarkdown(item)}</li>)}</ul>);
+      blocks.push(
+        <ul key={`list-${index}`} className="my-2.5 list-disc space-y-1 pl-5 text-[#F5F7F3]">
+          {items.map((item, itemIndex) => <li key={itemIndex}>{inlineMarkdown(item)}</li>)}
+        </ul>
+      );
       continue;
     }
 
@@ -94,7 +117,11 @@ export function MarkdownContent({ content }: { content: string }) {
         items.push(lines[index].trim().replace(/^\d+[.)]\s+/, ''));
         index += 1;
       }
-      blocks.push(<ol key={`ordered-${index}`} className="my-3 list-decimal space-y-1 pl-6">{items.map((item, itemIndex) => <li key={itemIndex}>{inlineMarkdown(item)}</li>)}</ol>);
+      blocks.push(
+        <ol key={`ordered-${index}`} className="my-2.5 list-decimal space-y-1 pl-5 text-[#F5F7F3]">
+          {items.map((item, itemIndex) => <li key={itemIndex}>{inlineMarkdown(item)}</li>)}
+        </ol>
+      );
       continue;
     }
 
@@ -104,8 +131,8 @@ export function MarkdownContent({ content }: { content: string }) {
       paragraph.push(lines[index].trim());
       index += 1;
     }
-    blocks.push(<p key={`paragraph-${index}`} className="my-3 leading-7">{inlineMarkdown(paragraph.join(' '))}</p>);
+    blocks.push(<p key={`paragraph-${index}`} className="my-2.5 leading-relaxed text-[#F5F7F3]">{inlineMarkdown(paragraph.join(' '))}</p>);
   }
 
-  return <div className="text-sm text-[#171717]">{blocks}</div>;
+  return <div className={`text-xs sm:text-sm text-[#F5F7F3] ${className}`}>{blocks}</div>;
 }

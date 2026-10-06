@@ -7,53 +7,57 @@ export default {
   theme: {
     extend: {
       colors: {
-        canvas: '#F5F3EE',
-        surface: '#FFFFFF',
-        'surface-secondary': '#ECEAE4',
-        sidebar: '#111318',
-        card: '#FFFFFF',
-        'card-hover': '#ECEAE4',
-        border: '#D9D7D0',
-        'border-blue': 'rgba(29, 78, 216, 0.25)',
-        'border-blue-strong': 'rgba(29, 78, 216, 0.45)',
-        ink: '#171717',
-        muted: '#6B6B67',
-        accent: {
-          DEFAULT: '#1D4ED8',
-          dark: '#172554',
-          soft: '#DBEAFE',
+        canvas: '#070807',
+        'surface-secondary': '#0C100E',
+        surface: '#101512',
+        elevated: '#141B17',
+        'deep-green': '#16231D',
+        emerald: {
+          DEFAULT: '#315C4B',
+          hover: '#3D705C',
+          muted: '#6F9B83',
+          dark: '#16231D',
+          light: '#6F9B83',
         },
-        success: '#166534',
+        champagne: '#B89B62',
+        border: 'rgba(255, 255, 255, 0.08)',
+        'border-hover': 'rgba(111, 155, 131, 0.30)',
+        ink: '#F5F7F3',
+        'secondary-text': '#A5ADA7',
+        muted: '#737B76',
       },
       fontFamily: {
-        sans: ['Inter', 'Plus Jakarta Sans', 'sans-serif'],
+        sans: ['Inter', 'Manrope', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
       boxShadow: {
-        'glow-blue': '0 0 20px -6px rgba(29, 78, 216, 0.28)',
-        'glow-blue-lg': '0 0 36px -8px rgba(29, 78, 216, 0.32)',
-        'glow-purple': '0 0 20px -6px rgba(29, 78, 216, 0.28)',
-        'glow-purple-lg': '0 0 36px -8px rgba(29, 78, 216, 0.32)',
-        'glow-cyan': '0 0 20px -6px rgba(29, 78, 216, 0.28)',
-        'card': '0 10px 30px -12px rgba(23, 37, 84, 0.14)',
+        'emerald-soft': '0 4px 20px -2px rgba(49, 92, 75, 0.25)',
+        'glow-subtle': '0 0 30px -10px rgba(49, 92, 75, 0.20)',
+        'card': '0 8px 24px -10px rgba(0, 0, 0, 0.6)',
       },
       animation: {
         'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'float': 'float 6s ease-in-out infinite',
-        'spin-slow': 'spin 20s linear infinite',
         'dropdown': 'dropdown 180ms ease-out',
+        'spin-slow': 'spin 90s linear infinite',
+        'spin-reverse-slow': 'reverse 120s linear infinite',
       },
       keyframes: {
         float: {
-          '0%, 100%': { transform: 'translateY(-5px)' },
-          '50%': { transform: 'translateY(5px)' },
+          '0%, 100%': { transform: 'translateY(-3px)' },
+          '50%': { transform: 'translateY(3px)' },
         },
         dropdown: {
           '0%': { opacity: '0', transform: 'translateY(-6px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
-        }
+        },
+        reverse: {
+          '0%': { transform: 'rotate(0deg)' },
+          '100%': { transform: 'rotate(-360deg)' },
+        },
       }
     },
   },
   plugins: [],
 }
+

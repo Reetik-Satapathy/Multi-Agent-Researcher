@@ -17,6 +17,9 @@ interface ResearchSearchProps {
   agents: ResearchAgent[];
   onSearch: (query: string, agentId: AgentId) => void;
   onFocusChange?: (focused: boolean) => void;
+  onQueryChange?: (query: string) => void;
+  selectedAgentId?: AgentId;
+  placeholder?: string;
   isBusy?: boolean;
 }
 
@@ -24,14 +27,26 @@ export function ResearchSearch({
   agents,
   onSearch,
   onFocusChange,
+  onQueryChange,
+  selectedAgentId,
+  placeholder = 'Search papers, topics, authors or DOI...',
   isBusy = false,
 }: ResearchSearchProps) {
   const [query, setQuery] = useState('');
-  const [selectedAgent, setSelectedAgent] = useState<ResearchAgent | null>(agents[0] ?? null);
+  const [selectedAgent, setSelectedAgent] = useState<ResearchAgent | null>(
+    agents.find((a) => a.id === selectedAgentId) ?? agents[0] ?? null
+  );
   const [attachedAgents, setAttachedAgents] = useState<ResearchAgent[]>([]);
   const [focused, setFocused] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (selectedAgentId) {
+      const match = agents.find((a) => a.id === selectedAgentId);
+      if (match) setSelectedAgent(match);
+    }
+  }, [selectedAgentId, agents]);
 
   useEffect(() => {
     const onPointerDown = (event: MouseEvent) => {
@@ -56,6 +71,11 @@ export function ResearchSearch({
     );
   };
 
+  const handleTextChange = (val: string) => {
+    setQuery(val);
+    onQueryChange?.(val);
+  };
+
   const submit = () => {
     const trimmed = query.trim();
     if (!trimmed || isBusy) return;
@@ -70,13 +90,12 @@ export function ResearchSearch({
           submit();
         }}
         className={cn(
-          'flex flex-col gap-2.5 rounded-2xl border bg-white px-3 py-2.5 shadow-[0_12px_32px_-18px_rgba(23,37,84,0.25)] transition-all duration-200 sm:flex-row sm:items-center sm:gap-2.5',
+          'flex flex-col gap-2.5 rounded-xl border bg-[#101512] px-3 py-2.5 transition-all duration-200 sm:flex-row sm:items-center sm:gap-2.5',
           focused
-            ? 'border-[#1D4ED8]/50 shadow-[0_0_0_3px_rgba(219,234,254,0.9)]'
-            : 'border-[#D9D7D0]'
+            ? 'border-[#6F9B83]/40 shadow-[0_0_20px_-8px_rgba(49,92,75,0.3)]'
+            : 'border-white/[0.08]'
         )}
       >
-        {/* + button: attach agents to the search */}
         <div ref={pickerRef} className="relative shrink-0 self-start sm:self-auto">
           <button
             type="button"
@@ -84,10 +103,10 @@ export function ResearchSearch({
             aria-label="Add agents"
             title="Add agents"
             className={cn(
-              'flex h-9 w-9 items-center justify-center rounded-xl border transition-all duration-200',
+              'flex h-9 w-9 items-center justify-center rounded-lg border transition-all duration-200',
               pickerOpen
-                ? 'border-[#1D4ED8]/50 bg-[#DBEAFE]/70 text-[#1D4ED8]'
-                : 'border-[#D9D7D0] bg-[#F5F3EE] text-[#6B6B67] hover:border-[#1D4ED8]/40 hover:text-[#1D4ED8]'
+                ? 'border-[#6F9B83]/50 bg-[#16231D] text-[#6F9B83]'
+                : 'border-white/[0.08] bg-[#0C100E] text-[#737B76] hover:border-[#6F9B83]/30 hover:text-[#F5F7F3]'
             )}
           >
             <Plus className="h-4 w-4" />
@@ -103,7 +122,6 @@ export function ResearchSearch({
           )}
         </div>
 
-        {/* Attached agent chips + search input */}
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
           {attachedAgents.map((agent) => (
             <button
@@ -111,21 +129,21 @@ export function ResearchSearch({
               type="button"
               onClick={() => toggleAttached(agent)}
               title="Remove agent"
-              className="inline-flex h-7 shrink-0 items-center gap-1 rounded-full border border-[#1D4ED8]/25 bg-[#DBEAFE]/70 px-2.5 text-[12px] font-medium text-[#172554] transition-colors duration-150 hover:border-[#1D4ED8]/50"
+              className="inline-flex h-7 shrink-0 items-center gap-1 rounded-full border border-[#6F9B83]/30 bg-[#16231D] px-2.5 text-[12px] font-medium text-[#F5F7F3] transition-colors hover:border-[#6F9B83]/50"
             >
               {agent.name.replace(' Agent', '')}
-              <X className="h-3 w-3 text-[#1D4ED8]" />
+              <X className="h-3 w-3 text-[#6F9B83]" />
             </button>
           ))}
           <div className="flex min-w-0 flex-1 items-center gap-2">
-            <Search className="h-4 w-4 shrink-0 text-[#6B6B67]" />
+            <Search className="h-4 w-4 shrink-0 text-[#6F9B83]" />
             <input
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => handleTextChange(event.target.value)}
               onFocus={() => setFocus(true)}
               onBlur={() => setFocus(false)}
-              placeholder="Search papers, topics, authors or DOI..."
-              className="h-9 w-full min-w-0 bg-transparent text-[14.5px] text-[#171717] outline-none placeholder:text-[#8B8F98]"
+              placeholder={placeholder}
+              className="h-9 w-full min-w-0 bg-transparent text-sm text-[#F5F7F3] outline-none placeholder:text-[#737B76]"
             />
           </div>
         </div>
@@ -135,7 +153,7 @@ export function ResearchSearch({
           <button
             type="submit"
             disabled={isBusy || !query.trim()}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#1D4ED8] text-white transition-all duration-200 hover:bg-[#172554] disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#315C4B] text-[#F5F7F3] transition-colors hover:bg-[#3D705C] disabled:cursor-not-allowed disabled:opacity-40"
             aria-label="Run research"
           >
             <ArrowRight className="h-4 w-4" />
@@ -143,11 +161,11 @@ export function ResearchSearch({
         </div>
       </form>
 
-      <div className="space-y-2.5 text-center">
-        <p className="text-[12px] text-[#6B6B67]">Try searching for</p>
-        <div className="flex flex-wrap items-center justify-center gap-2">
+      <div className="space-y-2 text-center">
+        <p className="text-xs text-[#737B76]">Try searching for</p>
+        <div className="flex flex-wrap items-center justify-center gap-1.5">
           {SUGGESTIONS.map((label) => (
-            <SearchSuggestion key={label} label={label} onSelect={setQuery} />
+            <SearchSuggestion key={label} label={label} onSelect={handleTextChange} />
           ))}
         </div>
       </div>

@@ -13,7 +13,6 @@ interface ComparisonTableProps {
 export const ComparisonTable: React.FC<ComparisonTableProps> = ({ papers, metrics }) => {
   const [highlightDifferences, setHighlightDifferences] = useState(true);
 
-  // Helper to check if row values differ across papers
   const isRowDifferent = (values: Record<string, string>) => {
     const valList = Object.values(values);
     if (valList.length <= 1) return false;
@@ -23,45 +22,46 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({ papers, metric
   return (
     <div className="space-y-4">
       {/* Controls Bar */}
-      <div className="flex items-center justify-between px-2">
-        <div className="flex items-center space-x-2 text-xs text-[#6B6B67]">
-          <Sparkles className="w-3.5 h-3.5 text-[#1D4ED8]" />
+      <div className="flex items-center justify-between px-1">
+        <div className="flex items-center gap-2 text-xs text-[#A5ADA7]">
+          <Sparkles className="h-3.5 w-3.5 text-[#6F9B83]" />
           <span>Comparing {papers.length} selected publications</span>
         </div>
 
         <button
+          type="button"
           onClick={() => setHighlightDifferences(!highlightDifferences)}
-          className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border text-xs transition-all ${
+          className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors ${
             highlightDifferences 
-              ? 'bg-[#DBEAFE] text-[#1D4ED8] border-[#1D4ED8]/40 shadow-glow-purple'
-              : 'bg-black/5 text-[#6B6B67] border-[#D9D7D0]'
+              ? 'border-[#6F9B83]/40 bg-[#16231D] text-[#F5F7F3]'
+              : 'border-white/[0.08] bg-[#0C100E] text-[#A5ADA7] hover:border-white/[0.16]'
           }`}
         >
-          {highlightDifferences ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+          {highlightDifferences ? <Eye className="h-3.5 w-3.5 text-[#6F9B83]" /> : <EyeOff className="h-3.5 w-3.5 text-[#737B76]" />}
           <span>Highlight Differences</span>
         </button>
       </div>
 
       {/* Table Container */}
-      <div className="glass-panel rounded-2xl overflow-x-auto border border-[#D9D7D0] shadow-card">
+      <div className="overflow-x-auto rounded-xl border border-white/[0.08] bg-[#101512]">
         <table className="w-full text-left border-collapse min-w-[700px]">
           <thead>
-            <tr className="border-b border-[#D9D7D0] bg-[#F5F3EE]">
-              <th className="p-4 text-xs font-mono uppercase text-[#6B6B67] w-48 shrink-0">
-                Evaluation Metric
+            <tr className="border-b border-white/[0.08] bg-[#0C100E]">
+              <th className="p-4 text-xs font-mono uppercase text-[#6F9B83] w-48 shrink-0">
+                Metric
               </th>
               {papers.map((paper, idx) => (
-                <th key={paper.id} className="p-4 text-sm font-bold text-[#171717] min-w-[220px]">
+                <th key={paper.id} className="p-4 text-xs font-bold text-[#F5F7F3] min-w-[220px]">
                   <div className="flex flex-col">
-                    <span className="text-xs text-[#1D4ED8] font-mono mb-1">Paper {String.fromCharCode(65 + idx)}</span>
+                    <span className="text-[11px] text-[#6F9B83] font-mono mb-1">Paper {String.fromCharCode(65 + idx)}</span>
                     <span className="line-clamp-2 leading-tight">{paper.title}</span>
-                    <span className="text-[11px] font-normal text-[#6B6B67] mt-1">{paper.authors[0]} et al. ({paper.year})</span>
+                    <span className="text-[11px] font-normal text-[#A5ADA7] mt-1">{paper.authors[0]} et al. ({paper.year})</span>
                   </div>
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#D9D7D0] text-xs text-[#171717]">
+          <tbody className="divide-y divide-white/[0.06] text-xs text-[#F5F7F3]">
             {metrics.map((row, idx) => {
               const differs = isRowDifferent(row.values);
               const isHighlighted = highlightDifferences && differs;
@@ -69,19 +69,21 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({ papers, metric
               return (
                 <tr 
                   key={idx} 
-                  className={`transition-colors hover:bg-black/5 ${
-                    isHighlighted ? 'bg-[#1D4ED8]/10' : ''
+                  className={`transition-colors hover:bg-[#141B17] ${
+                    isHighlighted ? 'bg-[#16231D]/50' : ''
                   }`}
                 >
-                  <td className="p-4 font-semibold text-[#6B6B67] bg-[#ECEAE4] font-mono flex items-center justify-between">
-                    <span>{row.metric}</span>
-                    {isHighlighted && (
-                      <span className="w-2 h-2 rounded-full bg-[#1D4ED8] shadow-glow-purple" title="Variance detected" />
-                    )}
+                  <td className="p-4 font-semibold text-[#A5ADA7] bg-[#0C100E]/70 font-mono">
+                    <div className="flex items-center justify-between">
+                      <span>{row.metric}</span>
+                      {isHighlighted && (
+                        <span className="h-2 w-2 rounded-full bg-[#6F9B83]" title="Variance detected" />
+                      )}
+                    </div>
                   </td>
                   {papers.map((paper) => (
                     <td key={paper.id} className="p-4 leading-relaxed align-top">
-                      {row.values[paper.id] || 'N/A'}
+                      {row.values[paper.id] || 'Not specified'}
                     </td>
                   ))}
                 </tr>

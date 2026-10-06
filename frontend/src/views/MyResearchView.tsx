@@ -25,47 +25,49 @@ export const MyResearchView: React.FC<MyResearchViewProps> = ({
   comparedPapers,
 }) => {
   const [activeTab, setActiveTab] = useState<'saved' | 'reports'>('saved');
+
   return (
-    <div className="space-y-8 pb-12">
+    <div className="mx-auto max-w-5xl space-y-6 pb-16">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-extrabold text-[#171717] tracking-tight">My Research Workspace</h2>
-        <p className="text-xs text-[#6B6B67] mt-1">
-          Organize saved papers and synthesized literature reports.
+        <h2 className="text-2xl font-bold tracking-tight text-[#F5F7F3]">My Research Library</h2>
+        <p className="mt-1 text-xs text-[#A5ADA7]">
+          Organize saved academic papers and synthesized research reports.
         </p>
       </div>
 
       {/* Tabs Row */}
-      <div className="flex items-center space-x-2 border-b border-[#D9D7D0] pb-1">
+      <div className="flex items-center gap-2 border-b border-white/[0.08] pb-2">
         <button
+          type="button"
           onClick={() => setActiveTab('saved')}
-          className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+          className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
             activeTab === 'saved'
-              ? 'bg-[#DBEAFE] text-[#1D4ED8] border border-[#1D4ED8]/40 shadow-glow-purple'
-              : 'text-[#6B6B67] hover:text-[#171717] hover:bg-black/5'
+              ? 'border border-[#6F9B83]/40 bg-[#16231D] text-[#F5F7F3]'
+              : 'border border-transparent text-[#A5ADA7] hover:bg-[#101512] hover:text-[#F5F7F3]'
           }`}
         >
-          <Bookmark className="w-4 h-4" />
+          <Bookmark className="h-3.5 w-3.5 text-[#6F9B83]" />
           <span>Saved Papers ({savedPapers.length})</span>
         </button>
 
         <button
+          type="button"
           onClick={() => setActiveTab('reports')}
-          className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+          className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
             activeTab === 'reports'
-              ? 'bg-[#DBEAFE] text-[#1D4ED8] border border-[#1D4ED8]/40 shadow-glow-purple'
-              : 'text-[#6B6B67] hover:text-[#171717] hover:bg-black/5'
+              ? 'border border-[#6F9B83]/40 bg-[#16231D] text-[#F5F7F3]'
+              : 'border border-transparent text-[#A5ADA7] hover:bg-[#101512] hover:text-[#F5F7F3]'
           }`}
         >
-          <FileText className="w-4 h-4" />
+          <FileText className="h-3.5 w-3.5 text-[#6F9B83]" />
           <span>Reports ({reports.length})</span>
         </button>
-
       </div>
 
-      {/* Tab Content Views */}
+      {/* Tab Content */}
       {activeTab === 'saved' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-3">
           {savedPapers.length > 0 ? (
             savedPapers.map((paper) => (
               <PaperCard
@@ -80,8 +82,8 @@ export const MyResearchView: React.FC<MyResearchViewProps> = ({
               />
             ))
           ) : (
-            <div className="col-span-2 glass-panel rounded-2xl p-12 text-center text-xs text-[#6B6B67]">
-              No saved papers yet. Click the bookmark icon on any paper to save it to your workspace.
+            <div className="rounded-xl border border-white/[0.08] bg-[#101512] p-12 text-center text-xs text-[#737B76]">
+              No saved papers yet. Click the bookmark icon on any paper to save it to your library.
             </div>
           )}
         </div>
@@ -93,28 +95,27 @@ export const MyResearchView: React.FC<MyResearchViewProps> = ({
             <div
               key={report.id}
               onClick={() => onOpenReport(report)}
-              className="glass-panel glass-panel-hover rounded-2xl p-5 cursor-pointer space-y-3 group"
+              className="group cursor-pointer rounded-xl border border-white/[0.08] bg-[#101512] p-5 space-y-3 transition-colors hover:border-[#6F9B83]/30 hover:bg-[#141B17]"
             >
               <div className="flex items-center justify-between">
-                <span className="px-2.5 py-0.5 rounded-full bg-[#DBEAFE] border border-[#1D4ED8]/30 text-[10px] font-mono text-[#1D4ED8]">
+                <span className="rounded-md border border-[#6F9B83]/20 bg-[#16231D] px-2 py-0.5 font-mono text-[10px] text-[#6F9B83]">
                   {report.type}
                 </span>
-                <span className="text-[11px] font-mono text-[#6B6B67]">{report.date}</span>
+                <span className="font-mono text-[11px] text-[#737B76]">{report.date}</span>
               </div>
 
-              <h3 className="text-base font-bold text-[#171717] group-hover:text-[#1D4ED8] transition-colors leading-snug">
+              <h3 className="text-sm font-semibold text-[#F5F7F3] leading-snug group-hover:text-[#6F9B83] transition-colors">
                 {report.title}
               </h3>
 
-              <div className="flex items-center justify-between text-xs text-[#6B6B67] font-mono pt-3 border-t border-[#D9D7D0]">
+              <div className="flex items-center justify-between border-t border-white/[0.06] pt-3 text-xs font-mono text-[#A5ADA7]">
                 <span>{report.wordCount} words · {report.sections.length} sections</span>
-                <ArrowUpRight className="w-4 h-4 text-[#171717]/40 group-hover:text-[#171717] transition-colors" />
+                <ArrowUpRight className="h-4 w-4 text-[#737B76] group-hover:text-[#F5F7F3] transition-colors" />
               </div>
             </div>
           ))}
         </div>
       )}
-
     </div>
   );
 };

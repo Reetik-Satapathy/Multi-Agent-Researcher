@@ -11,8 +11,8 @@ import {
   Maximize2, 
   BookOpen, 
   List,
-  FileText,
   LoaderCircle,
+  PenTool,
 } from 'lucide-react';
 import { MarkdownContent } from '../components/MarkdownContent';
 import { useLocalStorageState } from '../hooks/useLocalStorageState';
@@ -108,31 +108,21 @@ export const ReportWorkspaceView: React.FC<ReportWorkspaceViewProps> = ({
     const printStyles = `
       @page { size: A4; margin: 14mm; }
       *, *::before, *::after { box-sizing: border-box; }
-      html, body { width: auto; min-height: 0; margin: 0; padding: 0; overflow: visible !important; background: #F5F3EE !important; print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; }
-      body { color: #171717; font-family: Arial, sans-serif; }
-      #report-print-content { position: static !important; display: block !important; width: 100% !important; max-width: none !important; margin: 0 auto !important; padding: 10mm !important; overflow: visible !important; border: 1px solid #D9D7D0; border-radius: 12px; background: #fff !important; box-shadow: 0 4px 18px rgba(23, 37, 84, .08); color: #171717; font-size: 10.5pt; line-height: 1.75; print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; }
-      #report-print-content header { margin-bottom: 7mm; padding-bottom: 4mm; border-color: #D9D7D0; }
-      #report-print-content h1 { margin: 0; color: #171717; font-size: 22pt; line-height: 1.2; break-after: avoid; }
-      #report-print-content header p { margin-top: 2mm; color: #6B6B67; font-size: 9pt; }
-      #report-print-content section { display: block; padding-top: 7mm; padding-bottom: 7mm; border-color: #D9D7D0; overflow: visible !important; break-inside: auto; }
-      #report-print-content section > div:first-child { margin-bottom: 4mm; padding-bottom: 2mm; border-color: #D9D7D0; }
-      #report-print-content h2, #report-print-content h3, #report-print-content h4 { margin-top: 0; margin-bottom: 0; color: #171717; font-size: 17pt; line-height: 1.3; break-after: avoid; }
-      #report-print-content p, #report-print-content li { color: #171717; font-size: 10.5pt; line-height: 1.75; orphans: 3; widows: 3; }
-      #report-print-content p { margin-top: 3mm; margin-bottom: 3mm; }
-      #report-print-content ul, #report-print-content ol { margin-top: 3mm; margin-bottom: 3mm; padding-left: 7mm; }
-      #report-print-content table { width: 100%; border-collapse: collapse; font-size: 9pt; break-inside: auto; }
-      #report-print-content thead { display: table-header-group; }
-      #report-print-content tr { break-inside: avoid; }
-      #report-print-content th { background: #F5F3EE !important; font-weight: 700; }
-      #report-print-content th, #report-print-content td { border: 1px solid #D9D7D0; padding: 2mm; vertical-align: top; }
-      #report-print-content .overflow-x-auto { overflow: visible !important; }
-      #report-print-content a { color: #1D4ED8 !important; text-decoration: underline; }
-      #report-print-content code { overflow-wrap: anywhere; }
+      html, body { width: auto; min-height: 0; margin: 0; padding: 0; overflow: visible !important; background: #070807 !important; print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; }
+      body { color: #F5F7F3; font-family: Inter, Arial, sans-serif; }
+      #report-print-content { position: static !important; display: block !important; width: 100% !important; max-width: none !important; margin: 0 auto !important; padding: 10mm !important; overflow: visible !important; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; background: #101512 !important; color: #F5F7F3; font-size: 10.5pt; line-height: 1.75; }
+      #report-print-content header { margin-bottom: 7mm; padding-bottom: 4mm; border-bottom: 1px solid rgba(255,255,255,0.08); }
+      #report-print-content h1 { margin: 0; color: #F5F7F3; font-size: 22pt; line-height: 1.2; }
+      #report-print-content header p { margin-top: 2mm; color: #A5ADA7; font-size: 9pt; }
+      #report-print-content section { display: block; padding-top: 7mm; padding-bottom: 7mm; border-bottom: 1px solid rgba(255,255,255,0.08); }
+      #report-print-content h2, #report-print-content h3 { margin-top: 0; margin-bottom: 0; color: #F5F7F3; font-size: 16pt; }
+      #report-print-content p, #report-print-content li { color: #F5F7F3; font-size: 10.5pt; line-height: 1.75; }
+      #report-print-content a { color: #6F9B83 !important; text-decoration: underline; }
     `;
 
     printDocument.open();
     printDocument.write(
-      `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title></title><style>${printStyles}</style></head><body>${printableReport.outerHTML}</body></html>`,
+      `<!doctype html><html><head><meta charset="utf-8"><title></title><style>${printStyles}</style></head><body>${printableReport.outerHTML}</body></html>`,
     );
     printDocument.close();
     printDocument.title = `${report.title} - Research Report`;
@@ -176,280 +166,285 @@ export const ReportWorkspaceView: React.FC<ReportWorkspaceViewProps> = ({
   };
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6 pb-16">
+      {/* Hidden PDF Printable Target */}
       <article
         id="report-print-content"
-        className={`glass-panel report-full-document mx-auto w-full max-w-5xl rounded-2xl border border-[#D9D7D0] p-6 shadow-card md:p-10 ${viewMode === 'full' ? '' : 'report-full-document-screen-hidden'}`}
+        className={`report-full-document mx-auto w-full max-w-4xl rounded-xl border border-white/[0.08] bg-[#101512] p-8 md:p-12 ${viewMode === 'full' ? '' : 'report-full-document-screen-hidden'}`}
       >
-        <header className="mb-8 border-b border-[#D9D7D0] pb-5">
-          <h1 className="text-2xl font-bold tracking-tight text-[#171717] md:text-3xl">{report.title}</h1>
-          <p className="mt-2 text-sm text-[#6B6B67]">{report.type} · {currentWordCount} words</p>
+        <header className="mb-8 border-b border-white/[0.08] pb-5">
+          <h1 className="text-2xl font-bold tracking-tight text-[#F5F7F3] md:text-3xl">{report.title}</h1>
+          <p className="mt-2 text-xs text-[#A5ADA7] font-mono">{report.type} · {currentWordCount} words</p>
         </header>
-        <div className="divide-y divide-[#D9D7D0]">
-        {sections.map((section) => (
-          <section key={section.id} className="py-7 first:pt-0 last:pb-0">
-            <div className="mb-4 flex items-start justify-between gap-4 border-b border-[#D9D7D0] pb-3">
-              <h2 className="text-xl font-bold tracking-tight text-[#171717] md:text-2xl">{section.title}</h2>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveSectionId(section.id);
-                  setEditing((editingSection) => activeSectionId === section.id && editingSection ? false : true);
-                }}
-                className="report-full-edit-actions shrink-0 rounded bg-[#DBEAFE] px-2 py-1 text-[10px] font-mono text-[#1D4ED8] border border-[#1D4ED8]/30"
-              >
-                {editing && activeSectionId === section.id ? 'PREVIEW' : 'EDIT'}
-              </button>
-            </div>
-            {editing && activeSectionId === section.id ? (
-              <>
-                <textarea
-                  value={section.content}
-                  onChange={(event) => setSections((previous) => previous.map((item) =>
-                    item.id === section.id ? { ...item, content: event.target.value } : item,
-                  ))}
-                  rows={24}
-                  aria-label={`Edit ${section.title}`}
-                  className="report-full-edit-field w-full resize-y bg-transparent text-sm leading-relaxed text-[#171717] focus:outline-none md:text-base"
-                />
-                <div className="report-full-edit-preview">
-                  <MarkdownContent content={section.content} />
-                </div>
-              </>
-            ) : (
-              <MarkdownContent content={section.content} />
-            )}
-          </section>
-        ))}
+        <div className="divide-y divide-white/[0.08]">
+          {sections.map((section) => (
+            <section key={section.id} className="py-6 first:pt-0 last:pb-0">
+              <div className="mb-4 flex items-start justify-between gap-4 border-b border-white/[0.06] pb-2">
+                <h2 className="text-lg font-bold tracking-tight text-[#F5F7F3]">{section.title}</h2>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveSectionId(section.id);
+                    setEditing((editingSection) => activeSectionId === section.id && editingSection ? false : true);
+                  }}
+                  className="report-full-edit-actions shrink-0 rounded border border-white/[0.08] bg-[#0C100E] px-2 py-0.5 font-mono text-[10px] text-[#6F9B83]"
+                >
+                  {editing && activeSectionId === section.id ? 'PREVIEW' : 'EDIT'}
+                </button>
+              </div>
+              {editing && activeSectionId === section.id ? (
+                <>
+                  <textarea
+                    value={section.content}
+                    onChange={(event) => setSections((previous) => previous.map((item) =>
+                      item.id === section.id ? { ...item, content: event.target.value } : item,
+                    ))}
+                    rows={20}
+                    aria-label={`Edit ${section.title}`}
+                    className="report-full-edit-field w-full resize-y rounded-lg border border-white/[0.08] bg-[#0C100E] p-3 text-xs leading-relaxed text-[#F5F7F3] outline-none focus:border-[#6F9B83]"
+                  />
+                  <div className="report-full-edit-preview">
+                    <MarkdownContent content={section.content} />
+                  </div>
+                </>
+              ) : (
+                <MarkdownContent content={section.content} />
+              )}
+            </section>
+          ))}
         </div>
       </article>
-      {/* Top Header & Actions */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#D9D7D0] pb-4">
-        <div className="flex items-center space-x-3">
+
+      {/* Top Header & Actions Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
+        <div className="flex items-center gap-3 min-w-0">
           <button
+            type="button"
             onClick={onBack}
-            className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-black/5 hover:bg-black/[0.04] text-xs font-semibold text-[#171717] transition-colors"
+            className="flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-[#0C100E] px-2.5 py-1.5 text-xs text-[#A5ADA7] transition-colors hover:border-white/[0.16] hover:text-[#F5F7F3]"
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to Reports</span>
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span>Reports</span>
           </button>
-          <div>
-            <h2 className="text-lg font-bold text-[#171717] tracking-tight truncate max-w-md">{report.title}</h2>
-            <span className="text-[11px] text-[#6B6B67] font-mono">{report.type} • {currentWordCount} words</span>
+          <div className="min-w-0">
+            <h2 className="truncate text-base font-semibold text-[#F5F7F3] max-w-md">{report.title}</h2>
+            <span className="font-mono text-[11px] text-[#737B76]">{report.type} · {currentWordCount} words</span>
           </div>
         </div>
 
         {/* Actions Toolbar */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={handleSave}
-            className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
               savedSuccess
-                ? 'bg-emerald-600/15 text-emerald-600 border-emerald-600/40'
-                : 'bg-black/[0.04] hover:bg-black/[0.08] text-[#171717] border-[#D9D7D0]'
+                ? 'border-[#6F9B83]/50 bg-[#16231D] text-[#F5F7F3]'
+                : 'border-white/[0.08] bg-[#0C100E] text-[#A5ADA7] hover:border-white/[0.16] hover:text-[#F5F7F3]'
             }`}
           >
-            {savedSuccess ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
+            {savedSuccess ? <Check className="h-3.5 w-3.5 text-[#6F9B83]" /> : <Save className="h-3.5 w-3.5 text-[#737B76]" />}
             <span>{savedSuccess ? 'Saved!' : 'Save Draft'}</span>
           </button>
 
           <button
+            type="button"
             onClick={handleExportPDF}
-            className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-[#DBEAFE] border border-[#1D4ED8]/40 text-xs font-semibold text-[#1D4ED8] shadow-glow-purple hover:bg-[#DBEAFE]/70 transition-all"
+            className="flex items-center gap-1.5 rounded-lg bg-[#315C4B] px-3 py-1.5 text-xs font-semibold text-[#F5F7F3] transition-colors hover:bg-[#3D705C]"
           >
-            <Download className="w-3.5 h-3.5" />
+            <Download className="h-3.5 w-3.5" />
             <span>Export PDF</span>
           </button>
 
           <button
+            type="button"
             onClick={() => navigator.clipboard.writeText(window.location.href)}
-            className="p-2 rounded-xl bg-black/5 hover:bg-black/[0.04] text-[#6B6B67] hover:text-[#171717] border border-[#D9D7D0] transition-colors"
-            title="Share document link"
+            className="rounded-lg border border-white/[0.08] bg-[#0C100E] p-1.5 text-[#737B76] hover:text-[#F5F7F3] transition-colors"
+            title="Share report link"
           >
-            <Share2 className="w-4 h-4" />
+            <Share2 className="h-4 w-4" />
           </button>
+
+          <div className="ml-2 flex rounded-lg border border-white/[0.08] bg-[#0C100E] p-0.5">
+            <button
+              type="button"
+              onClick={() => setViewMode('sections')}
+              className={`rounded-md px-2.5 py-1 text-xs transition-colors ${
+                viewMode === 'sections' ? 'bg-[#16231D] font-medium text-[#F5F7F3]' : 'text-[#737B76] hover:text-[#F5F7F3]'
+              }`}
+            >
+              Sections
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setViewMode('full');
+                setEditing(false);
+              }}
+              className={`rounded-md px-2.5 py-1 text-xs transition-colors ${
+                viewMode === 'full' ? 'bg-[#16231D] font-medium text-[#F5F7F3]' : 'text-[#737B76] hover:text-[#F5F7F3]'
+              }`}
+            >
+              Full View
+            </button>
+          </div>
         </div>
       </div>
-      {exportError && <p role="alert" className="text-right text-sm text-red-600">{exportError}</p>}
+      {exportError && <p role="alert" className="text-right text-xs text-red-400">{exportError}</p>}
 
-      <div className="flex justify-end">
-        <div className="inline-flex rounded-xl border border-[#D9D7D0] bg-white p-1" role="group" aria-label="Report view">
-          <button
-            type="button"
-            onClick={() => setViewMode('sections')}
-            aria-pressed={viewMode === 'sections'}
-            className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
-              viewMode === 'sections'
-                ? 'bg-[#DBEAFE] text-[#1D4ED8]'
-                : 'text-[#6B6B67] hover:bg-black/5 hover:text-[#171717]'
-            }`}
-          >
-            <List className="h-4 w-4" />
-            Section view
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setViewMode('full');
-              setEditing(false);
-            }}
-            aria-pressed={viewMode === 'full'}
-            className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
-              viewMode === 'full'
-                ? 'bg-[#DBEAFE] text-[#1D4ED8]'
-                : 'text-[#6B6B67] hover:bg-black/5 hover:text-[#171717]'
-            }`}
-          >
-            <FileText className="h-4 w-4" />
-            Full report
-          </button>
-        </div>
-      </div>
+      {viewMode === 'full' ? null : (
+        /* 3-Column Notion-Style Academic Editor Layout */
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          {/* LEFT COLUMN: Table of Contents / Document Tree (3 Cols) */}
+          <div className="lg:col-span-3 space-y-3">
+            <div className="sticky top-20 space-y-2 rounded-xl border border-white/[0.08] bg-[#101512] p-4">
+              <div className="flex items-center gap-2 border-b border-white/[0.06] pb-2 font-mono text-[11px] font-semibold uppercase tracking-wider text-[#6F9B83]">
+                <List className="h-3.5 w-3.5" />
+                <span>Document Outline</span>
+              </div>
 
-      {viewMode === 'full' ? (
-        null
-      ) : (
-      /* 3-Panel Document Workspace Layout */
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* LEFT PANEL: Table of Contents */}
-          <div className="space-y-4">
-            <div className="glass-panel rounded-2xl p-4 space-y-3 sticky top-20">
-            <div className="flex items-center space-x-2 text-xs font-mono text-[#1D4ED8] uppercase tracking-wider font-semibold border-b border-[#D9D7D0] pb-2">
-              <List className="w-4 h-4" />
-              <span>Table of Contents</span>
-            </div>
-
-            <nav className="space-y-1">
-              {sections.map((section) => {
-                const isActive = section.id === activeSectionId;
-                return (
-                  <button
-                    key={section.id}
-                    onClick={() => setActiveSectionId(section.id)}
-                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-                      isActive
-                        ? 'bg-[#DBEAFE] text-[#1D4ED8] border border-[#1D4ED8]/30 font-bold'
-                        : 'text-[#6B6B67] hover:text-[#171717] hover:bg-black/5'
-                    }`}
-                  >
-                    <span className="truncate block">{section.title}</span>
-                  </button>
-                );
-              })}
-            </nav>
+              <nav className="space-y-0.5 pt-1">
+                {sections.map((section) => {
+                  const isActive = section.id === activeSectionId;
+                  return (
+                    <button
+                      key={section.id}
+                      type="button"
+                      onClick={() => setActiveSectionId(section.id)}
+                      className={`block w-full rounded-lg px-2.5 py-2 text-left text-xs transition-colors ${
+                        isActive
+                          ? 'border border-[#6F9B83]/30 bg-[#16231D] font-medium text-[#F5F7F3]'
+                          : 'text-[#A5ADA7] hover:bg-[#141B17] hover:text-[#F5F7F3]'
+                      }`}
+                    >
+                      <span className="truncate block">{section.title}</span>
+                    </button>
+                  );
+                })}
+              </nav>
             </div>
           </div>
 
-        {/* CENTER PANEL: Interactive Report Content Editor */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className="glass-panel rounded-2xl p-6 md:p-8 space-y-6 min-h-[600px] border border-[#D9D7D0] shadow-card">
-            {/* Section Header */}
-            <div className="flex items-center justify-between border-b border-[#D9D7D0] pb-3">
-              <h2 className="text-xl font-bold text-[#171717] tracking-tight">
-                {currentSection?.title}
-              </h2>
-              <button
-                type="button"
-                onClick={() => setEditing((current) => !current)}
-                className="rounded bg-[#DBEAFE] px-2 py-1 text-[10px] font-mono text-[#1D4ED8] border border-[#1D4ED8]/30"
-              >
-                {editing ? 'PREVIEW' : 'EDIT'}
-              </button>
-            </div>
+          {/* CENTER COLUMN: Large Academic Document Editor (6 Cols - DOMINATES SCREEN) */}
+          <div className="lg:col-span-6 space-y-4">
+            <div className="min-h-[640px] rounded-xl border border-white/[0.08] bg-[#101512] p-6 md:p-8 space-y-5">
+              {/* Section Title Header */}
+              <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
+                <h3 className="text-lg font-bold text-[#F5F7F3] tracking-tight">
+                  {currentSection?.title}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setEditing((current) => !current)}
+                  className="rounded-md border border-white/[0.08] bg-[#0C100E] px-2.5 py-1 text-[11px] font-mono text-[#6F9B83] hover:border-[#6F9B83]/40"
+                >
+                  {editing ? 'PREVIEW' : 'EDIT MARKDOWN'}
+                </button>
+              </div>
 
-            {editing ? (
-              <textarea
-                value={currentSection?.content || ''}
-                onChange={(e) => updateSectionContent(e.target.value)}
-                rows={24}
-                className="w-full bg-transparent text-[#171717] placeholder-[#8B8F98] text-sm md:text-base leading-relaxed font-sans focus:outline-none resize-y"
-              />
-            ) : currentSection ? (
-              <MarkdownContent content={currentSection.content} />
-            ) : (
-              <p className="text-sm text-[#6B6B67]">No report sections are available.</p>
-            )}
-            </div>
-          </div>
-
-        {/* RIGHT PANEL: AI Document Copilot Tools */}
-          <div className="space-y-4">
-            <div className="glass-panel rounded-2xl p-5 border border-[#1D4ED8]/40 shadow-glow-purple space-y-4 sticky top-20">
-            <div className="flex items-center space-x-2 pb-3 border-b border-[#D9D7D0]">
-              <Sparkles className="w-4 h-4 text-[#1D4ED8]" />
-              <h3 className="text-sm font-bold text-[#171717]">AI Document Copilot</h3>
-            </div>
-
-            <div className="space-y-2">
-              <button
-                onClick={() => void runAiTool('improve')}
-                disabled={aiWorking || !currentSection}
-                className="w-full flex items-center space-x-2 px-3 py-2 rounded-xl bg-black/5 hover:bg-[#DBEAFE] border border-[#D9D7D0] hover:border-[#1D4ED8]/40 text-xs font-semibold text-[#171717] transition-all text-left"
-              >
-                {aiWorkingAction === 'improve'
-                  ? <LoaderCircle className="w-4 h-4 animate-spin text-[#1D4ED8]" />
-                  : <Wand2 className="w-4 h-4 text-[#1D4ED8]" />}
-                <span>{aiWorkingAction === 'improve' ? 'Improving writing...' : 'Improve Writing & Flow'}</span>
-              </button>
-
-              <button
-                onClick={() => void runAiTool('shorten')}
-                disabled={aiWorking || !currentSection}
-                className="w-full flex items-center space-x-2 px-3 py-2 rounded-xl bg-black/5 hover:bg-[#DBEAFE] border border-[#D9D7D0] hover:border-[#1D4ED8]/40 text-xs font-semibold text-[#171717] transition-all text-left"
-              >
-                {aiWorkingAction === 'shorten'
-                  ? <LoaderCircle className="w-4 h-4 animate-spin text-amber-600" />
-                  : <AlignLeft className="w-4 h-4 text-amber-600" />}
-                <span>{aiWorkingAction === 'shorten' ? 'Shortening section...' : 'Shorten Section'}</span>
-              </button>
-
-              <button
-                onClick={() => void runAiTool('expand')}
-                disabled={aiWorking || !currentSection}
-                className="w-full flex items-center space-x-2 px-3 py-2 rounded-xl bg-black/5 hover:bg-[#DBEAFE] border border-[#D9D7D0] hover:border-[#1D4ED8]/40 text-xs font-semibold text-[#171717] transition-all text-left"
-              >
-                {aiWorkingAction === 'expand'
-                  ? <LoaderCircle className="w-4 h-4 animate-spin text-[#1D4ED8]" />
-                  : <Maximize2 className="w-4 h-4 text-[#1D4ED8]" />}
-                <span>{aiWorkingAction === 'expand' ? 'Expanding detail...' : 'Expand Technical Detail'}</span>
-              </button>
-
-              <button
-                onClick={() => void runAiTool('citation')}
-                disabled={aiWorking || !currentSection}
-                className="w-full flex items-center space-x-2 px-3 py-2 rounded-xl bg-black/5 hover:bg-[#DBEAFE] border border-[#D9D7D0] hover:border-[#1D4ED8]/40 text-xs font-semibold text-[#171717] transition-all text-left"
-              >
-                {aiWorkingAction === 'citation'
-                  ? <LoaderCircle className="w-4 h-4 animate-spin text-emerald-600" />
-                  : <BookOpen className="w-4 h-4 text-emerald-600" />}
-                <span>{aiWorkingAction === 'citation' ? 'Formatting citations...' : 'Add Formatted Citations'}</span>
-              </button>
-            </div>
-
-            {/* Custom Prompt Box */}
-            <div className="pt-3 border-t border-[#D9D7D0] space-y-2">
-              <label htmlFor="report-copilot-prompt" className="text-[11px] text-[#6B6B67] font-mono block">Ask AI Copilot:</label>
-              <textarea
-                id="report-copilot-prompt"
-                value={aiPromptInput}
-                onChange={(e) => setAiPromptInput(e.target.value)}
-                placeholder="e.g. 'Rewrite this paragraph in formal IEEE academic tone'"
-                maxLength={2000}
-                rows={3}
-                className="w-full bg-white border border-[#D9D7D0] rounded-xl p-2.5 text-xs text-[#171717] placeholder-[#8B8F98] focus:outline-none focus:border-[#1D4ED8] resize-none"
-              />
-              {aiError && <p role="alert" className="text-xs text-red-600">{aiError}</p>}
-              {aiWorking && <p role="status" className="text-xs text-[#6B6B67]">Editing “{currentSection?.title}”...</p>}
-              <button
-                onClick={() => void runAiTool('custom')}
-                disabled={aiWorking || !currentSection || !aiPromptInput.trim()}
-                className="w-full py-2 rounded-xl bg-gradient-to-r from-[#1D4ED8] to-[#1D4ED8] text-white text-xs font-semibold shadow-glow-purple hover:opacity-95 transition-all"
-              >
-                {aiWorking ? 'Applying Edit...' : 'Apply AI Edit'}
-              </button>
+              {editing ? (
+                <textarea
+                  value={currentSection?.content || ''}
+                  onChange={(e) => updateSectionContent(e.target.value)}
+                  rows={24}
+                  className="w-full resize-y rounded-lg border border-white/[0.08] bg-[#0C100E] p-4 text-xs md:text-sm leading-relaxed font-sans text-[#F5F7F3] outline-none focus:border-[#6F9B83]"
+                />
+              ) : currentSection ? (
+                <div className="text-xs md:text-sm leading-relaxed text-[#F5F7F3]">
+                  <MarkdownContent content={currentSection.content} />
+                </div>
+              ) : (
+                <p className="text-xs text-[#737B76]">No section selected.</p>
+              )}
             </div>
           </div>
-        </div>
+
+          {/* RIGHT COLUMN: AI Assistant Tools Panel (3 Cols) */}
+          <div className="lg:col-span-3 space-y-4">
+            <div className="sticky top-20 space-y-4 rounded-xl border border-white/[0.08] bg-[#101512] p-4">
+              <div className="flex items-center gap-2 border-b border-white/[0.06] pb-3">
+                <Sparkles className="h-4 w-4 text-[#6F9B83]" />
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[#F5F7F3]">AI Writing Assistant</h4>
+              </div>
+
+              {/* AI Quick Actions */}
+              <div className="space-y-1.5">
+                <button
+                  type="button"
+                  onClick={() => void runAiTool('improve')}
+                  disabled={aiWorking || !currentSection}
+                  className="flex w-full items-center gap-2 rounded-lg border border-white/[0.08] bg-[#0C100E] px-3 py-2 text-left text-xs text-[#A5ADA7] transition-colors hover:border-[#6F9B83]/30 hover:bg-[#141B17] hover:text-[#F5F7F3] disabled:opacity-40"
+                >
+                  {aiWorkingAction === 'improve' ? <LoaderCircle className="h-3.5 w-3.5 animate-spin text-[#6F9B83]" /> : <Wand2 className="h-3.5 w-3.5 text-[#6F9B83]" />}
+                  <span>Improve Writing & Flow</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => void runAiTool('shorten')}
+                  disabled={aiWorking || !currentSection}
+                  className="flex w-full items-center gap-2 rounded-lg border border-white/[0.08] bg-[#0C100E] px-3 py-2 text-left text-xs text-[#A5ADA7] transition-colors hover:border-[#6F9B83]/30 hover:bg-[#141B17] hover:text-[#F5F7F3] disabled:opacity-40"
+                >
+                  {aiWorkingAction === 'shorten' ? <LoaderCircle className="h-3.5 w-3.5 animate-spin text-[#B89B62]" /> : <AlignLeft className="h-3.5 w-3.5 text-[#B89B62]" />}
+                  <span>Summarize / Shorten</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => void runAiTool('expand')}
+                  disabled={aiWorking || !currentSection}
+                  className="flex w-full items-center gap-2 rounded-lg border border-white/[0.08] bg-[#0C100E] px-3 py-2 text-left text-xs text-[#A5ADA7] transition-colors hover:border-[#6F9B83]/30 hover:bg-[#141B17] hover:text-[#F5F7F3] disabled:opacity-40"
+                >
+                  {aiWorkingAction === 'expand' ? <LoaderCircle className="h-3.5 w-3.5 animate-spin text-[#6F9B83]" /> : <Maximize2 className="h-3.5 w-3.5 text-[#6F9B83]" />}
+                  <span>Expand Section Detail</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => void runAiTool('citation')}
+                  disabled={aiWorking || !currentSection}
+                  className="flex w-full items-center gap-2 rounded-lg border border-white/[0.08] bg-[#0C100E] px-3 py-2 text-left text-xs text-[#A5ADA7] transition-colors hover:border-[#6F9B83]/30 hover:bg-[#141B17] hover:text-[#F5F7F3] disabled:opacity-40"
+                >
+                  {aiWorkingAction === 'citation' ? <LoaderCircle className="h-3.5 w-3.5 animate-spin text-[#6F9B83]" /> : <BookOpen className="h-3.5 w-3.5 text-[#6F9B83]" />}
+                  <span>Add References & Citations</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => void runAiTool('improve')}
+                  disabled={aiWorking || !currentSection}
+                  className="flex w-full items-center gap-2 rounded-lg border border-white/[0.08] bg-[#0C100E] px-3 py-2 text-left text-xs text-[#A5ADA7] transition-colors hover:border-[#6F9B83]/30 hover:bg-[#141B17] hover:text-[#F5F7F3] disabled:opacity-40"
+                >
+                  <PenTool className="h-3.5 w-3.5 text-[#6F9B83]" />
+                  <span>Generate Draft Section</span>
+                </button>
+              </div>
+
+              {/* Custom Prompt Box */}
+              <div className="border-t border-white/[0.06] pt-3 space-y-2">
+                <label htmlFor="custom-ai-instruction" className="text-[11px] font-mono text-[#737B76] block">Custom Instruction:</label>
+                <textarea
+                  id="custom-ai-instruction"
+                  value={aiPromptInput}
+                  onChange={(e) => setAiPromptInput(e.target.value)}
+                  placeholder="e.g. 'Format equations in formal IEEE notation'"
+                  maxLength={2000}
+                  rows={3}
+                  className="w-full resize-none rounded-lg border border-white/[0.08] bg-[#0C100E] p-2.5 text-xs text-[#F5F7F3] placeholder-[#737B76] outline-none focus:border-[#6F9B83]"
+                />
+                {aiError && <p role="alert" className="text-xs text-red-400">{aiError}</p>}
+                {aiWorking && <p role="status" className="text-xs text-[#6F9B83]">Applying AI edits to section...</p>}
+                <button
+                  type="button"
+                  onClick={() => void runAiTool('custom')}
+                  disabled={aiWorking || !currentSection || !aiPromptInput.trim()}
+                  className="w-full rounded-lg bg-[#315C4B] py-2 text-xs font-semibold text-[#F5F7F3] transition-colors hover:bg-[#3D705C] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {aiWorking ? 'Processing...' : 'Apply Instruction'}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Sidebar, type ActiveTab } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 import { PageContainer } from './components/PageContainer';
+import { HomeView } from './views/HomeView';
 import { DiscoverPapersView } from './views/DiscoverPapersView';
 import { PaperDetailView } from './views/PaperDetailView';
 import { AISummaryView } from './views/AISummaryView';
@@ -20,7 +21,7 @@ import { authService, type GoogleUser } from './services/authService';
 const RESEARCH_SECTIONS: ActiveTab[] = ['my-research'];
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<ActiveTab>('discover');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [googleUser, setGoogleUser] = useState<GoogleUser | null>(null);
@@ -102,7 +103,7 @@ export function App() {
     setComparedPapers((prev) => {
       const exists = prev.some((p) => p.id === paper.id);
       if (exists) {
-        return prev.filter((p) => p.id === paper.id);
+        return prev.filter((p) => p.id !== paper.id);
       }
       if (prev.length >= 4) return prev;
       return [...prev, paper];
@@ -142,137 +143,163 @@ export function App() {
   };
 
   const savedPapersList = savedPapers;
+  const isHome = activeTab === 'home';
 
   return (
-    <div className="flex min-h-screen overflow-x-hidden bg-[#F5F3EE] font-sans text-[#171717]">
-      <Sidebar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        collapsed={sidebarCollapsed}
-        setCollapsed={setSidebarCollapsed}
-        user={googleUser}
-        googleEnabled={googleEnabled}
-        onSignIn={handleGoogleSignIn}
-        onSignOut={() => void handleGoogleSignOut()}
-        mobileOpen={mobileNavOpen}
-        onMobileClose={() => setMobileNavOpen(false)}
+    <div className={`relative overflow-x-hidden bg-[#070807] font-sans text-[#F5F7F3] ${isHome ? 'h-svh overflow-hidden bg-[#050706]' : 'min-h-screen'}`}>
+      {/* Background Liquid/Crystal Atmosphere */}
+      <div 
+        className="pointer-events-none fixed inset-0 z-0 opacity-40"
+        style={{
+          backgroundImage: `
+            radial-gradient(ellipse at 50% -10%, rgba(49, 92, 75, 0.18) 0%, transparent 60%),
+            radial-gradient(ellipse at 100% 100%, rgba(22, 35, 29, 0.35) 0%, transparent 50%)
+          `
+        }}
       />
+      {!isHome && (
+        <div className="pointer-events-none fixed top-0 left-0 right-0 z-10 h-px bg-gradient-to-r from-transparent via-[#6F9B83]/30 to-transparent" />
+      )}
 
-      <div
-        className={`relative flex min-h-screen min-w-0 flex-1 flex-col transition-[padding] duration-300 ${
-          sidebarCollapsed ? 'md:pl-20' : 'md:pl-[248px]'
-        }`}
-      >
-        <TopBar
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          savedCount={savedPapersList.length}
-          onOpenMobileNav={() => setMobileNavOpen(true)}
-        />
-
-        <main className="min-w-0 flex-1">
-          {activeTab === 'discover' && (
-            <PageContainer>
-              <DiscoverPapersView
-                onOpenPaper={handleOpenPaper}
-                onSummarizePaper={handleSummarizePaper}
-                onCompareToggle={handleCompareToggle}
-                onSaveToggle={handleSaveToggle}
-                comparedPapers={comparedPapers}
-                savedPapers={savedPapersList}
-              />
-            </PageContainer>
-          )}
-
-          {activeTab === 'paper-detail' && selectedPaper && (
-            <PageContainer>
-              <PaperDetailView
-                paper={selectedPaper}
-                onBack={() => setActiveTab('discover')}
-                onSummarize={handleSummarizePaper}
-                onCompareToggle={handleCompareToggle}
-                onSaveToggle={handleSaveToggle}
-                onGenerateReport={handleGenerateReportFromPapers}
-                isSaved={savedPapersList.some((paper) => paper.id === selectedPaper.id)}
-                isCompared={comparedPapers.some((p) => p.id === selectedPaper.id)}
-              />
-            </PageContainer>
-          )}
-
-          {activeTab === 'ai-summary' && selectedPaper && (
-            <PageContainer>
-              <AISummaryView
-                paper={selectedPaper}
-                onBack={() => setActiveTab('paper-detail')}
-                onGenerateReport={handleGenerateReportFromPapers}
-              />
-            </PageContainer>
-          )}
-
-          {activeTab === 'compare' && (
-            <PageContainer>
-              <CompareView />
-            </PageContainer>
-          )}
-
-          {activeTab === 'reports' && (
-            <PageContainer>
-              <ReportGeneratorView
-                reports={reports}
-                onReportGenerated={handleReportGenerated}
-                onOpenReport={handleOpenReport}
-              />
-            </PageContainer>
-          )}
-
-          {activeTab === 'document-chat' && (
-            <PageContainer>
-              <DocumentChatView />
-            </PageContainer>
-          )}
-
-          {activeTab === 'report-workspace' && selectedReport && (
-            <PageContainer>
-              <ReportWorkspaceView
-                report={selectedReport}
-                onBack={() => setActiveTab('my-research')}
-                onSaveReport={handleSaveReportDraft}
-              />
-            </PageContainer>
-          )}
-
-          {RESEARCH_SECTIONS.includes(activeTab) && (
-            <PageContainer>
-              <MyResearchView
-                savedPapers={savedPapersList}
-                reports={reports}
-                onOpenPaper={handleOpenPaper}
-                onSummarizePaper={handleSummarizePaper}
-                onCompareToggle={handleCompareToggle}
-                onSaveToggle={handleSaveToggle}
-                onOpenReport={handleOpenReport}
-                comparedPapers={comparedPapers}
-              />
-            </PageContainer>
-          )}
-
-          {activeTab === 'profile' && (
-            <PageContainer>
-              <ProfileView user={userProfile} />
-            </PageContainer>
-          )}
-
-          {activeTab === 'settings' && (
-            <PageContainer>
-              <ProfileView user={userProfile} initialTab="preferences" />
-            </PageContainer>
-          )}
+      {/* When on Home Screen: Full-Screen Minimalist Screen Without Sidebar & TopBar */}
+      {isHome ? (
+        <main className="relative z-10 h-svh w-full overflow-hidden">
+          <HomeView onEnterWorkspace={() => setActiveTab('discover')} />
         </main>
-      </div>
+      ) : (
+        /* Application Shell (Sidebar + TopBar + Main View) */
+        <div className="flex min-h-screen w-full">
+          <Sidebar
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            collapsed={sidebarCollapsed}
+            setCollapsed={setSidebarCollapsed}
+            user={googleUser}
+            googleEnabled={googleEnabled}
+            onSignIn={handleGoogleSignIn}
+            onSignOut={() => void handleGoogleSignOut()}
+            mobileOpen={mobileNavOpen}
+            onMobileClose={() => setMobileNavOpen(false)}
+          />
+
+          <div
+            className={`relative z-10 flex min-h-screen min-w-0 flex-1 flex-col transition-[padding] duration-200 ${
+              sidebarCollapsed ? 'md:pl-20' : 'md:pl-[240px]'
+            }`}
+          >
+            <TopBar
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              savedCount={savedPapersList.length}
+              onOpenMobileNav={() => setMobileNavOpen(true)}
+            />
+
+            <main className="min-w-0 flex-1">
+              {activeTab === 'discover' && (
+                <PageContainer>
+                  <DiscoverPapersView
+                    onOpenPaper={handleOpenPaper}
+                    onSummarizePaper={handleSummarizePaper}
+                    onCompareToggle={handleCompareToggle}
+                    onSaveToggle={handleSaveToggle}
+                    comparedPapers={comparedPapers}
+                    savedPapers={savedPapersList}
+                  />
+                </PageContainer>
+              )}
+
+              {activeTab === 'paper-detail' && selectedPaper && (
+                <PageContainer>
+                  <PaperDetailView
+                    paper={selectedPaper}
+                    onBack={() => setActiveTab('discover')}
+                    onSummarize={handleSummarizePaper}
+                    onCompareToggle={handleCompareToggle}
+                    onSaveToggle={handleSaveToggle}
+                    onGenerateReport={handleGenerateReportFromPapers}
+                    isSaved={savedPapersList.some((paper) => paper.id === selectedPaper.id)}
+                    isCompared={comparedPapers.some((p) => p.id === selectedPaper.id)}
+                  />
+                </PageContainer>
+              )}
+
+              {activeTab === 'ai-summary' && selectedPaper && (
+                <PageContainer>
+                  <AISummaryView
+                    paper={selectedPaper}
+                    onBack={() => setActiveTab('paper-detail')}
+                    onGenerateReport={handleGenerateReportFromPapers}
+                  />
+                </PageContainer>
+              )}
+
+              {activeTab === 'compare' && (
+                <PageContainer>
+                  <CompareView />
+                </PageContainer>
+              )}
+
+              {activeTab === 'reports' && (
+                <PageContainer>
+                  <ReportGeneratorView
+                    reports={reports}
+                    onReportGenerated={handleReportGenerated}
+                    onOpenReport={handleOpenReport}
+                  />
+                </PageContainer>
+              )}
+
+              {activeTab === 'document-chat' && (
+                <PageContainer>
+                  <DocumentChatView />
+                </PageContainer>
+              )}
+
+              {activeTab === 'report-workspace' && selectedReport && (
+                <PageContainer>
+                  <ReportWorkspaceView
+                    report={selectedReport}
+                    onBack={() => setActiveTab('my-research')}
+                    onSaveReport={handleSaveReportDraft}
+                  />
+                </PageContainer>
+              )}
+
+              {RESEARCH_SECTIONS.includes(activeTab) && (
+                <PageContainer>
+                  <MyResearchView
+                    savedPapers={savedPapersList}
+                    reports={reports}
+                    onOpenPaper={handleOpenPaper}
+                    onSummarizePaper={handleSummarizePaper}
+                    onCompareToggle={handleCompareToggle}
+                    onSaveToggle={handleSaveToggle}
+                    onOpenReport={handleOpenReport}
+                    comparedPapers={comparedPapers}
+                  />
+                </PageContainer>
+              )}
+
+              {activeTab === 'profile' && (
+                <PageContainer>
+                  <ProfileView user={userProfile} />
+                </PageContainer>
+              )}
+
+              {activeTab === 'settings' && (
+                <PageContainer>
+                  <ProfileView user={userProfile} initialTab="preferences" />
+                </PageContainer>
+              )}
+            </main>
+          </div>
+        </div>
+      )}
+
       {authError && (googleUser || loginPromptDismissed) && (
         <div
           role="alert"
-          className="fixed bottom-4 right-4 z-[110] flex max-w-lg items-center gap-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 shadow-lg"
+          className="fixed bottom-4 right-4 z-[110] flex max-w-lg items-center gap-4 rounded-xl border border-red-500/20 bg-[#101512] px-4 py-3 text-xs text-red-400 shadow-lg"
         >
           <span>{authError}</span>
           <button
@@ -284,39 +311,40 @@ export function App() {
           </button>
         </div>
       )}
+
       {!authLoading && !googleUser && !loginPromptDismissed && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
           <section
             role="dialog"
             aria-modal="true"
             aria-labelledby="google-signin-title"
-            className="w-full max-w-md space-y-5 rounded-2xl border border-[#D9D7D0] bg-white p-6 shadow-2xl"
+            className="w-full max-w-md space-y-5 rounded-2xl border border-white/[0.08] bg-[#101512] p-6 shadow-2xl"
           >
             <div className="space-y-2">
-              <h2 id="google-signin-title" className="text-xl font-bold text-[#171717]">Sign in to your workspace</h2>
-              <p className="text-sm text-[#6B6B67]">
-                Sign in with Google to show your verified account name and email in your profile.
+              <h2 id="google-signin-title" className="text-base font-bold text-[#F5F7F3]">Sign in to your workspace</h2>
+              <p className="text-xs text-[#A5ADA7]">
+                Sign in with Google to display your verified account profile.
               </p>
             </div>
             {!googleEnabled && (
-              <p role="status" className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
+              <p role="status" className="rounded-xl border border-[#B89B62]/30 bg-[#16231D] p-3 text-xs text-[#B89B62]">
                 Google sign-in needs to be configured by adding Google OAuth credentials to the backend environment.
               </p>
             )}
-            {authError && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{authError}</p>}
+            {authError && <p role="alert" className="rounded-xl border border-red-500/20 bg-red-950/20 p-3 text-xs text-red-300">{authError}</p>}
             <div className="flex flex-col gap-2 sm:flex-row-reverse">
               <button
                 type="button"
                 disabled={!googleEnabled}
                 onClick={handleGoogleSignIn}
-                className="rounded-xl bg-[#1D4ED8] px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-xl bg-[#315C4B] px-4 py-2 text-xs font-semibold text-[#F5F7F3] hover:bg-[#3D705C] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Continue with Google
               </button>
               <button
                 type="button"
                 onClick={() => setLoginPromptDismissed(true)}
-                className="rounded-xl border border-[#D9D7D0] px-4 py-2.5 text-sm font-semibold text-[#6B6B67] hover:bg-[#F5F3EE]"
+                className="rounded-xl border border-white/[0.08] bg-[#0C100E] px-4 py-2 text-xs font-semibold text-[#A5ADA7] hover:bg-[#141B17] hover:text-[#F5F7F3]"
               >
                 Do it later
               </button>

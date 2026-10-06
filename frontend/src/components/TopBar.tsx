@@ -1,4 +1,4 @@
-import { Menu, Search, Bookmark } from 'lucide-react';
+import { Bell, Menu, Search, User } from 'lucide-react';
 import type { ActiveTab } from './Sidebar';
 
 interface TopBarProps {
@@ -8,62 +8,79 @@ interface TopBarProps {
   onOpenMobileNav?: () => void;
 }
 
-export function TopBar({ activeTab, setActiveTab, savedCount, onOpenMobileNav }: TopBarProps) {
-  const getTitle = () => {
+export function TopBar({ activeTab, setActiveTab, onOpenMobileNav }: TopBarProps) {
+  const getBreadcrumb = () => {
     switch (activeTab) {
+      case 'research':
+        return 'Home';
       case 'discover':
         return 'Discover Papers';
+      case 'document-chat':
+        return 'Workspace / Ask PDF';
       case 'my-research':
         return 'My Research';
       case 'compare':
-        return 'Compare Papers';
+        return 'Compare';
       case 'reports':
         return 'Reports';
       case 'paper-detail':
-        return 'Paper';
+        return 'Discover / Paper';
       case 'ai-summary':
-        return 'AI Summary';
+        return 'Discover / AI Summary';
       case 'report-workspace':
-        return 'Report Workspace';
+        return 'Reports / Workspace';
+      case 'document-chat':
+        return 'Home / Document';
       case 'profile':
         return 'Profile';
       case 'settings':
         return 'Settings';
       default:
-        return 'REWORK Ai';
+        return 'Workspace';
     }
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-[#D9D7D0] bg-[#F5F3EE]/85 px-4 backdrop-blur-md sm:px-6">
+    <header className="sticky top-0 z-30 flex h-12 items-center justify-between border-b border-white/[0.08] bg-[#070807]/92 px-4 sm:px-8">
       <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={onOpenMobileNav}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[#171717] md:hidden"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#A5ADA7] hover:bg-[#101512] hover:text-[#F5F7F3] md:hidden"
           aria-label="Open navigation"
         >
-          <Menu className="h-5 w-5" />
+          <Menu className="h-4 w-4" />
         </button>
-        <h1 className="text-[15px] font-semibold tracking-tight text-[#171717]">{getTitle()}</h1>
+        <span className="text-[13px] font-light tracking-wide text-[#A5ADA7]">
+          {getBreadcrumb()}
+        </span>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
         <button
           type="button"
           onClick={() => setActiveTab('discover')}
-          className="hidden items-center gap-2 rounded-xl border border-[#D9D7D0] bg-white px-3 py-1.5 text-[13px] text-[#6B6B67] transition-colors duration-200 hover:border-[#1D4ED8]/40 hover:text-[#171717] md:flex"
+          className="hidden h-8 items-center gap-2 rounded-md px-2.5 text-xs text-[#737B76] transition-colors hover:bg-[#101512] hover:text-[#F5F7F3] md:flex"
         >
           <Search className="h-3.5 w-3.5" />
-          Search papers
+          <span>Search</span>
         </button>
+
         <button
           type="button"
-          onClick={() => setActiveTab('my-research')}
-          className="flex items-center gap-1.5 rounded-xl border border-[#D9D7D0] bg-white px-3 py-1.5 text-[13px] text-[#171717] transition-colors duration-200 hover:border-[#1D4ED8]/40"
+          className="flex h-8 w-8 items-center justify-center rounded-md text-[#737B76] hover:bg-[#101512] hover:text-[#F5F7F3]"
+          title="Notifications"
         >
-          <Bookmark className="h-4 w-4 text-[#1D4ED8]" />
-          <span>{savedCount}</span>
+          <Bell className="h-3.5 w-3.5" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('profile')}
+          className="flex h-8 w-8 items-center justify-center rounded-md text-[#737B76] hover:bg-[#101512] hover:text-[#F5F7F3]"
+          title="Profile"
+        >
+          <User className="h-3.5 w-3.5" />
         </button>
       </div>
     </header>

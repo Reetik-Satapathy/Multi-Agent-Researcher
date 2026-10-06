@@ -61,13 +61,13 @@ def extract_pdf(path: Path, output_root: Path = Path("output/documents")) -> Pat
             raise ValueError(f"PDF exceeds the {MAX_PAGES}-page limit.")
         metadata = _metadata(document, path)
         page_text = [page.get_text("text").strip() for page in document]
+        markdown = pymupdf4llm.to_markdown(document, page_chunks=True)
 
     if sum(bool(text) for text in page_text) == 0:
         raise ValueError("PDF contains no selectable text; OCR is not configured.")
 
     document_dir = output_root / metadata.document_id
     document_dir.mkdir(parents=True, exist_ok=True)
-    markdown = pymupdf4llm.to_markdown(str(path), page_chunks=True)
     markdown_text = _markdown_text(markdown)
     if not markdown_text.strip():
         raise ValueError("PDF text extraction produced no usable content.")

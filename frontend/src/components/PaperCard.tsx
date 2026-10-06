@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   Sparkles, 
   Bookmark, 
@@ -33,91 +33,100 @@ export const PaperCard: React.FC<PaperCardProps> = ({
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="glass-panel glass-panel-hover rounded-2xl p-5 md:p-6 flex flex-col justify-between space-y-4 group">
-      {/* Top Header */}
-      <div>
-        <div className="flex items-start justify-between gap-3 mb-2">
+    <div className="group rounded-xl border border-white/[0.08] bg-[#101512] p-5 transition-all duration-150 hover:border-[#6F9B83]/30 hover:bg-[#141B17]">
+      {/* Title & Category Header */}
+      <div className="space-y-2">
+        <div className="flex items-start justify-between gap-4">
           <h3 
             onClick={() => onOpen(paper)}
-            className="text-lg md:text-xl font-bold text-[#171717] group-hover:text-[#1D4ED8] transition-colors cursor-pointer leading-snug tracking-tight"
+            className="cursor-pointer text-base font-semibold text-[#F5F7F3] leading-snug tracking-tight transition-colors group-hover:text-[#6F9B83]"
           >
             {paper.title}
           </h3>
-
+          <span className="shrink-0 rounded-md border border-white/[0.06] bg-[#0C100E] px-2 py-0.5 font-mono text-[10px] text-[#A5ADA7]">
+            {paper.year}
+          </span>
         </div>
 
-        {/* Authors */}
-        <p className="text-xs text-[#6B6B67] mb-3 font-medium">
-          {paper.authors.join(' • ')}
+        {/* Authors & Journal */}
+        <p className="text-xs text-[#A5ADA7]">
+          {paper.authors.join(' · ')} {paper.journal ? `— ${paper.journal}` : ''}
         </p>
 
-        {/* Metadata Badges */}
-        <PaperMetadata paper={paper} className="mb-4" />
+        {/* Paper Badges / Metadata */}
+        <div className="pt-1">
+          <PaperMetadata paper={paper} />
+        </div>
 
         {/* Abstract Snippet */}
-        <div className="relative text-sm text-[#6B6B67] leading-relaxed">
+        <div className="pt-2 text-xs leading-relaxed text-[#A5ADA7]">
           <p className={expanded ? '' : 'line-clamp-3'}>
             {paper.abstract}
           </p>
           {paper.abstract.length > 180 && (
             <button
+              type="button"
               onClick={() => setExpanded(!expanded)}
-              className="mt-1 flex items-center space-x-1 text-xs text-[#1D4ED8] hover:underline font-medium"
+              className="mt-1 flex items-center gap-1 text-[11px] text-[#6F9B83] hover:underline font-medium"
             >
-              <span>{expanded ? 'Show less' : 'Read full abstract'}</span>
-              {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              <span>{expanded ? 'Collapse abstract' : 'Read full abstract'}</span>
+              {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
             </button>
           )}
         </div>
       </div>
 
       {/* Action Toolbar */}
-      <div className="pt-4 border-t border-[#D9D7D0] flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center space-x-2">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.06] pt-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Save Action */}
           <button
             type="button"
             onClick={() => onSaveToggle(paper)}
             aria-pressed={isSaved || Boolean(paper.isSaved)}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs transition-colors ${
               isSaved || paper.isSaved
-                ? 'bg-[#DBEAFE] text-[#1D4ED8] border-[#1D4ED8]/50'
-                : 'bg-white text-[#6B6B67] border-[#D9D7D0] hover:text-[#171717]'
+                ? 'border-[#6F9B83]/40 bg-[#16231D] text-[#F5F7F3]'
+                : 'border-white/[0.08] bg-[#0C100E] text-[#A5ADA7] hover:border-white/[0.16] hover:text-[#F5F7F3]'
             }`}
           >
-            <Bookmark className={`w-3.5 h-3.5 ${isSaved || paper.isSaved ? 'fill-[#1D4ED8]' : ''}`} />
-            <span>{isSaved || paper.isSaved ? 'Saved' : 'Save Paper'}</span>
+            <Bookmark className={`h-3 w-3 ${isSaved || paper.isSaved ? 'fill-[#6F9B83] text-[#6F9B83]' : 'text-[#737B76]'}`} />
+            <span>{isSaved || paper.isSaved ? 'Saved' : 'Save'}</span>
           </button>
 
           {/* AI Summary Action */}
           <button
+            type="button"
             onClick={() => onSummarize(paper)}
-            className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-[#DBEAFE] hover:bg-[#DBEAFE]/70 border border-[#1D4ED8]/40 text-xs font-semibold text-[#1D4ED8] transition-all shadow-glow-purple"
+            className="flex items-center gap-1.5 rounded-lg border border-[#6F9B83]/30 bg-[#16231D]/60 px-2.5 py-1 text-xs text-[#6F9B83] transition-colors hover:bg-[#315C4B]/30 hover:text-[#F5F7F3]"
           >
-            <Sparkles className="w-3.5 h-3.5" />
+            <Sparkles className="h-3 w-3 text-[#6F9B83]" />
             <span>AI Summary</span>
           </button>
 
-          {/* Add to Compare Action */}
+          {/* Compare Action */}
           <button
+            type="button"
             onClick={() => onCompareToggle(paper)}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-all ${
+            className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs transition-colors ${
               isCompared
-                ? 'bg-emerald-600/10 text-emerald-600 border-emerald-600/30'
-                : 'bg-black/5 text-[#6B6B67] border-[#D9D7D0] hover:text-[#171717] hover:bg-black/[0.04]'
+                ? 'border-[#6F9B83]/40 bg-[#16231D] text-[#F5F7F3]'
+                : 'border-white/[0.08] bg-[#0C100E] text-[#A5ADA7] hover:border-white/[0.16] hover:text-[#F5F7F3]'
             }`}
           >
-            {isCompared ? <Check className="w-3.5 h-3.5" /> : <GitCompare className="w-3.5 h-3.5" />}
-            <span>{isCompared ? 'Added to Compare' : 'Compare'}</span>
+            {isCompared ? <Check className="h-3 w-3 text-[#6F9B83]" /> : <GitCompare className="h-3 w-3 text-[#737B76]" />}
+            <span>{isCompared ? 'In Compare' : 'Compare'}</span>
           </button>
         </div>
 
         {/* Open Details Action */}
         <button
+          type="button"
           onClick={() => onOpen(paper)}
-          className="flex items-center space-x-1.5 px-4 py-1.5 rounded-xl bg-black/[0.04] hover:bg-black/[0.08] text-[#171717] text-xs font-semibold transition-all ml-auto"
+          className="flex items-center gap-1 rounded-lg border border-white/[0.08] bg-[#0C100E] px-3 py-1 text-xs font-medium text-[#F5F7F3] transition-colors hover:border-[#6F9B83]/40 hover:bg-[#141B17]"
         >
           <span>Open</span>
-          <ArrowUpRight className="w-3.5 h-3.5" />
+          <ArrowUpRight className="h-3.5 w-3.5 text-[#737B76]" />
         </button>
       </div>
     </div>

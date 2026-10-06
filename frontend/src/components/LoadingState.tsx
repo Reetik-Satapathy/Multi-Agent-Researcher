@@ -1,39 +1,20 @@
 import React from 'react';
-import { Loader2 } from 'lucide-react';
-import { ResearchVisual } from './ResearchVisual';
+import { LoaderCircle } from 'lucide-react';
 
 interface LoadingStateProps {
   message?: string;
   subMessage?: string;
-  showOrb?: boolean;
 }
 
 export const LoadingState: React.FC<LoadingStateProps> = ({
-  message = 'AI Agents Processing Research...',
-  subMessage = 'Synthesizing literature archives and cross-referencing findings...',
-  showOrb = true
+  message = 'Processing academic query...',
+  subMessage = 'Connecting to scholarly APIs and organizing research insights...',
 }) => {
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-4 text-center space-y-6">
-      {showOrb && (
-        <ResearchVisual />
-      )}
-
-      <div className="flex items-center space-x-2 text-base font-semibold text-[#171717]">
-        <Loader2 className="w-5 h-5 text-[#1D4ED8] animate-spin" />
-        <span>{message}</span>
-      </div>
-
-      {subMessage && (
-        <p className="text-xs text-[#6B6B67] max-w-md leading-relaxed">
-          {subMessage}
-        </p>
-      )}
-
-      {/* Shimmer skeleton bar */}
-      <div className="w-64 h-1.5 rounded-full bg-black/5 overflow-hidden relative">
-        <div className="absolute inset-0 animate-shimmer" />
-      </div>
+    <div className="flex flex-col items-center justify-center rounded-xl border border-white/[0.08] bg-[#101512] p-12 text-center">
+      <LoaderCircle className="h-8 w-8 animate-spin text-[#6F9B83]" />
+      <h3 className="mt-4 text-sm font-semibold text-[#F5F7F3]">{message}</h3>
+      <p className="mt-1 max-w-sm text-xs text-[#737B76]">{subMessage}</p>
     </div>
   );
 };

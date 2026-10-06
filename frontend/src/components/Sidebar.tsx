@@ -1,8 +1,10 @@
 import {
-  FileText,
-  GitCompare,
-  Library,
+  Home,
   Search,
+  MessageSquareText,
+  Library,
+  GitCompare,
+  FileText,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -12,6 +14,8 @@ import { cn } from '../lib/cn';
 import type { GoogleUser } from '../services/authService';
 
 export type ActiveTab =
+  | 'home'
+  | 'research'
   | 'discover'
   | 'my-research'
   | 'compare'
@@ -37,10 +41,11 @@ interface SidebarProps {
 }
 
 const MAIN_NAV: Array<{ id: ActiveTab; label: string; icon: typeof Search }> = [
+  { id: 'research', label: 'Home', icon: Home },
+  { id: 'discover', label: 'Discover', icon: Search },
+  { id: 'document-chat', label: 'Ask PDF', icon: MessageSquareText },
   { id: 'my-research', label: 'My Research', icon: Library },
-  { id: 'discover', label: 'Discover Papers', icon: Search },
-  { id: 'document-chat', label: 'Ask a PDF', icon: FileText },
-  { id: 'compare', label: 'Compare Papers', icon: GitCompare },
+  { id: 'compare', label: 'Compare', icon: GitCompare },
   { id: 'reports', label: 'Reports', icon: FileText },
 ];
 
@@ -56,7 +61,11 @@ export function Sidebar({
   mobileOpen = false,
   onMobileClose,
 }: SidebarProps) {
-  const isActive = (id: ActiveTab) => activeTab === id;
+  const isActive = (id: ActiveTab) => {
+    if (id === 'discover' && (activeTab === 'paper-detail' || activeTab === 'ai-summary')) return true;
+    if (id === 'reports' && activeTab === 'report-workspace') return true;
+    return activeTab === id;
+  };
 
   const go = (tab: ActiveTab) => {
     setActiveTab(tab);
@@ -72,15 +81,18 @@ export function Sidebar({
         onClick={() => go(id)}
         title={collapsed ? label : undefined}
         className={cn(
-          'sidebar-nav-item flex w-full items-center gap-3 rounded-xl px-3 py-2 text-[13px] transition-colors duration-200',
+          'sidebar-nav-item relative flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] transition-colors duration-150',
           collapsed && 'justify-center px-0',
           active
-            ? 'bg-[#1D4ED8]/20 text-[#F5F3EE]'
-            : 'text-[#8B8F98] hover:bg-white/[0.05] hover:text-[#E5E7EB]'
+            ? 'bg-[#16231D] font-medium text-[#F5F7F3]'
+            : 'text-[#737B76] hover:bg-[#16231D]/55 hover:text-[#F5F7F3]',
         )}
       >
-        <Icon className={cn('h-4 w-4 shrink-0', active ? 'text-[#60A5FA]' : 'text-[#8B8F98]')} />
-        {!collapsed && <span className={active ? 'font-medium' : 'font-normal'}>{label}</span>}
+        {active && (
+          <span className="absolute left-0 top-1.5 bottom-1.5 w-px bg-[#6F9B83]" />
+        )}
+        <Icon className={cn('h-3.5 w-3.5 shrink-0', active ? 'text-[#6F9B83]' : 'text-[#737B76]')} />
+        {!collapsed && <span>{label}</span>}
       </button>
     );
   };
@@ -91,37 +103,37 @@ export function Sidebar({
         <button
           type="button"
           aria-label="Close navigation"
-          className="fixed inset-0 z-40 bg-black/45 md:hidden"
+          className="fixed inset-0 z-40 bg-black/60 md:hidden"
           onClick={onMobileClose}
         />
       )}
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex flex-col border-r border-white/[0.06] bg-[#111318] transition-transform duration-300 md:translate-x-0',
-          collapsed ? 'w-20' : 'w-[248px]',
-          mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+          'fixed inset-y-0 left-0 z-50 flex flex-col border-r border-white/[0.08] bg-[#070807] transition-transform duration-200 md:translate-x-0',
+          collapsed ? 'w-20' : 'w-[220px]',
+          mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
         )}
       >
-        <div className={cn('flex items-start justify-between px-5 pt-5 pb-4', collapsed && 'px-3')}>
-          <div className="flex min-w-0 items-center gap-3">
-            <span className="relative flex h-8 w-8 shrink-0 items-center justify-center">
-              <span className="absolute inset-0 rounded-full bg-[#1D4ED8]/40 blur-md" />
-              <span className="relative h-7 w-7 rounded-full bg-[radial-gradient(circle_at_30%_25%,#BFDBFE,transparent_30%),radial-gradient(circle_at_70%_70%,#1D4ED8,transparent_34%),linear-gradient(145deg,#172554,#1D4ED8_55%,#0F172A)] shadow-[0_0_16px_rgba(29,78,216,0.55)]" />
-            </span>
-            {!collapsed && (
-              <div className="min-w-0">
-                <p className="text-[15px] font-semibold tracking-tight text-[#E5E7EB]">REWORK Ai</p>
-                <p className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.16em] text-[#8B8F98]">
-                  AI Research Workspace
-                </p>
-              </div>
+        <div className={cn('flex items-center justify-between px-4 py-5', collapsed && 'justify-center px-2')}>
+          <button
+            type="button"
+            onClick={() => go('home')}
+            className="min-w-0 text-left"
+            title="REWORK Ai"
+          >
+            {!collapsed ? (
+              <span className="text-[13px] font-medium tracking-[0.22em] text-[#F5F7F3]">
+                REWORK <span className="font-normal tracking-[0.12em] text-[#6F9B83]">Ai</span>
+              </span>
+            ) : (
+              <span className="text-[11px] font-medium text-[#6F9B83]">RA</span>
             )}
-          </div>
+          </button>
           <button
             type="button"
             onClick={() => setCollapsed(!collapsed)}
-            className="hidden rounded-lg p-1.5 text-[#8B8F98] transition-colors duration-200 hover:bg-white/[0.05] hover:text-[#E5E7EB] md:inline-flex"
+            className="hidden rounded-md p-1 text-[#737B76] transition-colors hover:bg-[#101512] hover:text-[#F5F7F3] md:inline-flex"
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
@@ -130,8 +142,8 @@ export function Sidebar({
 
         <div className="flex-1 overflow-y-auto px-3 pb-4">
           {!collapsed && (
-            <p className="mb-2 px-3 text-[10px] font-medium uppercase tracking-[0.16em] text-[#6B6F78]">
-              Main
+            <p className="mb-2 px-2 text-[10px] font-medium uppercase tracking-[0.2em] text-[#737B76]">
+              Workspace
             </p>
           )}
           <nav className="space-y-0.5">
@@ -139,7 +151,7 @@ export function Sidebar({
           </nav>
         </div>
 
-        <div className={cn('space-y-2.5 border-t border-white/[0.06] px-3 pb-4 pt-3.5', collapsed && 'px-2')}>
+        <div className={cn('space-y-2 border-t border-white/[0.08] px-3 py-3', collapsed && 'px-2')}>
           {navButton('settings', 'Settings', Settings)}
           <UserProfile
             user={user}
