@@ -152,6 +152,7 @@ button:not(:disabled):active {
   @page {
     size: A4;
     margin: 14mm;
+    background: #fff;
   }
 
   html,
@@ -159,7 +160,7 @@ button:not(:disabled):active {
   #root {
     min-height: 0;
     overflow: visible !important;
-    background: #070807 !important;
+    background: #fff !important;
     print-color-adjust: exact !important;
     -webkit-print-color-adjust: exact !important;
   }
@@ -182,14 +183,20 @@ button:not(:disabled):active {
     max-width: none;
     margin: 0;
     padding: 10mm;
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid rgba(0,0,0,0.12);
     border-radius: 12px;
-    background: #101512 !important;
-    color: #F5F7F3;
+    background: #fff !important;
+    color: #000 !important;
     font-family: Inter, Arial, sans-serif;
     font-size: 10.5pt;
     line-height: 1.75;
     print-color-adjust: exact !important;
     -webkit-print-color-adjust: exact !important;
+  }
+
+  #report-print-content,
+  #report-print-content * {
+    background-color: #fff !important;
+    color: #000 !important;
   }
 }

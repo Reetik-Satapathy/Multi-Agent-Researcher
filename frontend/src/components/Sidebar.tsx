@@ -1,5 +1,4 @@
 import {
-  Home,
   Search,
   MessageSquareText,
   Library,
@@ -41,11 +40,10 @@ interface SidebarProps {
 }
 
 const MAIN_NAV: Array<{ id: ActiveTab; label: string; icon: typeof Search }> = [
-  { id: 'research', label: 'Home', icon: Home },
-  { id: 'discover', label: 'Discover', icon: Search },
-  { id: 'document-chat', label: 'Ask PDF', icon: MessageSquareText },
   { id: 'my-research', label: 'My Research', icon: Library },
-  { id: 'compare', label: 'Compare', icon: GitCompare },
+  { id: 'discover', label: 'Discover Papers', icon: Search },
+  { id: 'document-chat', label: 'Ask a PDF', icon: MessageSquareText },
+  { id: 'compare', label: 'Compare Papers', icon: GitCompare },
   { id: 'reports', label: 'Reports', icon: FileText },
 ];
 

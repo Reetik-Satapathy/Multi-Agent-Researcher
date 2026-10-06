@@ -146,7 +146,7 @@ export function App() {
   const isHome = activeTab === 'home';
 
   return (
-    <div className={`relative overflow-x-hidden bg-[#070807] font-sans text-[#F5F7F3] ${isHome ? 'h-svh overflow-hidden bg-[#050706]' : 'min-h-screen'}`}>
+    <div className={`relative overflow-x-clip bg-[#070807] font-sans text-[#F5F7F3] ${isHome ? 'h-svh overflow-hidden bg-[#050706]' : 'min-h-screen'}`}>
       {/* Background Liquid/Crystal Atmosphere */}
       <div 
         className="pointer-events-none fixed inset-0 z-0 opacity-40"

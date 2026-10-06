@@ -25,6 +25,22 @@ interface ReportWorkspaceViewProps {
   onSaveReport: (report: ResearchReport) => void;
 }
 
+function withoutRepeatedSectionHeading(content: string, title: string): string {
+  const lines = content.split(/\r?\n/);
+  const firstContentLine = lines.findIndex((line) => line.trim());
+  if (firstContentLine === -1) return content;
+
+  const normalize = (value: string) => value
+    .replace(/^#{1,6}\s*/, '')
+    .replace(/^(?:\*\*|__)(.*)(?:\*\*|__)$/, '$1')
+    .replace(/^\d+[.)]\s*/, '')
+    .trim()
+    .toLowerCase();
+
+  if (normalize(lines[firstContentLine]) !== normalize(title)) return content;
+  return lines.slice(firstContentLine + 1).join('\n').replace(/^\s+/, '');
+}
+
 export const ReportWorkspaceView: React.FC<ReportWorkspaceViewProps> = ({
   report,
   onBack,
@@ -106,18 +122,19 @@ export const ReportWorkspaceView: React.FC<ReportWorkspaceViewProps> = ({
     });
 
     const printStyles = `
-      @page { size: A4; margin: 14mm; }
+      @page { size: A4; margin: 14mm; background: #fff; }
       *, *::before, *::after { box-sizing: border-box; }
-      html, body { width: auto; min-height: 0; margin: 0; padding: 0; overflow: visible !important; background: #070807 !important; print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; }
-      body { color: #F5F7F3; font-family: Inter, Arial, sans-serif; }
-      #report-print-content { position: static !important; display: block !important; width: 100% !important; max-width: none !important; margin: 0 auto !important; padding: 10mm !important; overflow: visible !important; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; background: #101512 !important; color: #F5F7F3; font-size: 10.5pt; line-height: 1.75; }
-      #report-print-content header { margin-bottom: 7mm; padding-bottom: 4mm; border-bottom: 1px solid rgba(255,255,255,0.08); }
-      #report-print-content h1 { margin: 0; color: #F5F7F3; font-size: 22pt; line-height: 1.2; }
-      #report-print-content header p { margin-top: 2mm; color: #A5ADA7; font-size: 9pt; }
-      #report-print-content section { display: block; padding-top: 7mm; padding-bottom: 7mm; border-bottom: 1px solid rgba(255,255,255,0.08); }
-      #report-print-content h2, #report-print-content h3 { margin-top: 0; margin-bottom: 0; color: #F5F7F3; font-size: 16pt; }
-      #report-print-content p, #report-print-content li { color: #F5F7F3; font-size: 10.5pt; line-height: 1.75; }
-      #report-print-content a { color: #6F9B83 !important; text-decoration: underline; }
+      html, body { width: auto; min-height: 0; margin: 0; padding: 0; overflow: visible !important; background: #fff !important; print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; }
+      body { color: #000; font-family: Inter, Arial, sans-serif; }
+      #report-print-content { position: static !important; display: block !important; width: 100% !important; max-width: none !important; margin: 0 auto !important; padding: 10mm !important; overflow: visible !important; border: 1px solid rgba(0,0,0,0.12); border-radius: 12px; background: #fff !important; color: #000; font-size: 10.5pt; line-height: 1.75; }
+      #report-print-content, #report-print-content * { background-color: #fff !important; color: #000 !important; }
+      #report-print-content header { margin-bottom: 7mm; padding-bottom: 4mm; border-bottom: 1px solid rgba(0,0,0,0.12); }
+      #report-print-content h1 { margin: 0; font-size: 22pt; line-height: 1.2; }
+      #report-print-content header p { margin-top: 2mm; font-size: 9pt; }
+      #report-print-content section { display: block; padding-top: 7mm; padding-bottom: 7mm; border-bottom: 1px solid rgba(0,0,0,0.12); }
+      #report-print-content h2, #report-print-content h3 { margin-top: 0; margin-bottom: 0; font-size: 16pt; }
+      #report-print-content p, #report-print-content li { font-size: 10.5pt; line-height: 1.75; }
+      #report-print-content a { text-decoration: underline; }
     `;
 
     printDocument.open();
@@ -167,56 +184,8 @@ export const ReportWorkspaceView: React.FC<ReportWorkspaceViewProps> = ({
 
   return (
     <div className="space-y-6 pb-16">
-      {/* Hidden PDF Printable Target */}
-      <article
-        id="report-print-content"
-        className={`report-full-document mx-auto w-full max-w-4xl rounded-xl border border-white/[0.08] bg-[#101512] p-8 md:p-12 ${viewMode === 'full' ? '' : 'report-full-document-screen-hidden'}`}
-      >
-        <header className="mb-8 border-b border-white/[0.08] pb-5">
-          <h1 className="text-2xl font-bold tracking-tight text-[#F5F7F3] md:text-3xl">{report.title}</h1>
-          <p className="mt-2 text-xs text-[#A5ADA7] font-mono">{report.type} · {currentWordCount} words</p>
-        </header>
-        <div className="divide-y divide-white/[0.08]">
-          {sections.map((section) => (
-            <section key={section.id} className="py-6 first:pt-0 last:pb-0">
-              <div className="mb-4 flex items-start justify-between gap-4 border-b border-white/[0.06] pb-2">
-                <h2 className="text-lg font-bold tracking-tight text-[#F5F7F3]">{section.title}</h2>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveSectionId(section.id);
-                    setEditing((editingSection) => activeSectionId === section.id && editingSection ? false : true);
-                  }}
-                  className="report-full-edit-actions shrink-0 rounded border border-white/[0.08] bg-[#0C100E] px-2 py-0.5 font-mono text-[10px] text-[#6F9B83]"
-                >
-                  {editing && activeSectionId === section.id ? 'PREVIEW' : 'EDIT'}
-                </button>
-              </div>
-              {editing && activeSectionId === section.id ? (
-                <>
-                  <textarea
-                    value={section.content}
-                    onChange={(event) => setSections((previous) => previous.map((item) =>
-                      item.id === section.id ? { ...item, content: event.target.value } : item,
-                    ))}
-                    rows={20}
-                    aria-label={`Edit ${section.title}`}
-                    className="report-full-edit-field w-full resize-y rounded-lg border border-white/[0.08] bg-[#0C100E] p-3 text-xs leading-relaxed text-[#F5F7F3] outline-none focus:border-[#6F9B83]"
-                  />
-                  <div className="report-full-edit-preview">
-                    <MarkdownContent content={section.content} />
-                  </div>
-                </>
-              ) : (
-                <MarkdownContent content={section.content} />
-              )}
-            </section>
-          ))}
-        </div>
-      </article>
-
       {/* Top Header & Actions Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
+      <div className="sticky top-12 z-20 flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.08] bg-[#070807]/95 py-2 pb-4 backdrop-blur">
         <div className="flex items-center gap-3 min-w-0">
           <button
             type="button"
@@ -292,6 +261,54 @@ export const ReportWorkspaceView: React.FC<ReportWorkspaceViewProps> = ({
       </div>
       {exportError && <p role="alert" className="text-right text-xs text-red-400">{exportError}</p>}
 
+      {/* Hidden PDF Printable Target */}
+      <article
+        id="report-print-content"
+        className={`report-full-document mx-auto w-full max-w-4xl rounded-xl border border-white/[0.08] bg-[#101512] p-8 md:p-12 ${viewMode === 'full' ? '' : 'report-full-document-screen-hidden'}`}
+      >
+        <header className="mb-8 border-b border-white/[0.08] pb-5">
+          <h1 className="text-2xl font-bold tracking-tight text-[#F5F7F3] md:text-3xl">{report.title}</h1>
+          <p className="mt-2 text-xs text-[#A5ADA7] font-mono">{report.type} · {currentWordCount} words</p>
+        </header>
+        <div className="divide-y divide-white/[0.08]">
+          {sections.map((section) => (
+            <section key={section.id} className="py-6 first:pt-0 last:pb-0">
+              <div className="mb-4 flex items-start justify-between gap-4 border-b border-white/[0.06] pb-2">
+                <h2 className="text-lg font-bold tracking-tight text-[#F5F7F3]">{section.title}</h2>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveSectionId(section.id);
+                    setEditing((editingSection) => activeSectionId === section.id && editingSection ? false : true);
+                  }}
+                  className="report-full-edit-actions shrink-0 rounded border border-white/[0.08] bg-[#0C100E] px-2 py-0.5 font-mono text-[10px] text-[#6F9B83]"
+                >
+                  {editing && activeSectionId === section.id ? 'PREVIEW' : 'EDIT'}
+                </button>
+              </div>
+              {editing && activeSectionId === section.id ? (
+                <>
+                  <textarea
+                    value={section.content}
+                    onChange={(event) => setSections((previous) => previous.map((item) =>
+                      item.id === section.id ? { ...item, content: event.target.value } : item,
+                    ))}
+                    rows={20}
+                    aria-label={`Edit ${section.title}`}
+                    className="report-full-edit-field w-full resize-y rounded-lg border border-white/[0.08] bg-[#0C100E] p-3 text-xs leading-relaxed text-[#F5F7F3] outline-none focus:border-[#6F9B83]"
+                  />
+                  <div className="report-full-edit-preview">
+                    <MarkdownContent content={withoutRepeatedSectionHeading(section.content, section.title)} />
+                  </div>
+                </>
+              ) : (
+                <MarkdownContent content={withoutRepeatedSectionHeading(section.content, section.title)} />
+              )}
+            </section>
+          ))}
+        </div>
+      </article>
+
       {viewMode === 'full' ? null : (
         /* 3-Column Notion-Style Academic Editor Layout */
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
@@ -351,7 +368,7 @@ export const ReportWorkspaceView: React.FC<ReportWorkspaceViewProps> = ({
                 />
               ) : currentSection ? (
                 <div className="text-xs md:text-sm leading-relaxed text-[#F5F7F3]">
-                  <MarkdownContent content={currentSection.content} />
+                  <MarkdownContent content={withoutRepeatedSectionHeading(currentSection.content, currentSection.title)} />
                 </div>
               ) : (
                 <p className="text-xs text-[#737B76]">No section selected.</p>

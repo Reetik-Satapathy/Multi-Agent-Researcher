@@ -1,4 +1,4 @@
-import { Bell, Menu, Search, User } from 'lucide-react';
+import { Menu, Search } from 'lucide-react';
 import type { ActiveTab } from './Sidebar';
 
 interface TopBarProps {
@@ -66,22 +66,6 @@ export function TopBar({ activeTab, setActiveTab, onOpenMobileNav }: TopBarProps
           <span>Search</span>
         </button>
 
-        <button
-          type="button"
-          className="flex h-8 w-8 items-center justify-center rounded-md text-[#737B76] hover:bg-[#101512] hover:text-[#F5F7F3]"
-          title="Notifications"
-        >
-          <Bell className="h-3.5 w-3.5" />
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('profile')}
-          className="flex h-8 w-8 items-center justify-center rounded-md text-[#737B76] hover:bg-[#101512] hover:text-[#F5F7F3]"
-          title="Profile"
-        >
-          <User className="h-3.5 w-3.5" />
-        </button>
       </div>
     </header>
   );
